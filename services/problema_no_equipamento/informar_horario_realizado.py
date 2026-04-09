@@ -31,7 +31,7 @@ class InformarHorarioRealizado:
                 
             
             self.driver.switch_to.default_content()
-            
+
             WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, '//*[@id="scroll_table_1"]/tbody/tr[3]/td[1]/a/img'))
             ).click()
@@ -250,7 +250,7 @@ class InformarHorarioRealizado:
                     WebDriverWait(self.driver, 10).until(
                         EC.visibility_of_element_located((By.XPATH, "//*[@value='Salvar']"))
                     ).click()
-                    time.sleep(1)
+                    time.sleep(5)
                     notify = WebDriverWait(self.driver, 50).until(EC.presence_of_element_located((By.XPATH,'//*[@id="top_pad_div"]/div/div/div[1]/span')))
                     notify = notify.get_attribute("innerText")
                     # print(f'Notificação hora extra: {notify}')
@@ -259,7 +259,7 @@ class InformarHorarioRealizado:
                     else:
                         SmartsheetClient.update_smartsheet('Motivo Recusa',f"{notify}", self.row_id, self.sheet_id, self.token)
                 except Exception as e:
-                    print(e)
+                    print('erro ao classificar he')
                     SmartsheetClient.update_smartsheet('Motivo Recusa',f"Erro ao tentar classificar HE", self.row_id, self.sheet_id, self.token)
         except Exception as e:
             elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")

@@ -47,3 +47,23 @@ class DriverFactory:
         driver = webdriver.Edge(options=options)
 
         return driver
+
+    # @staticmethod
+    # def create_edge_driver(worker_id=None):
+    #     # Caminho para o msedgedriver.exe
+    #     driver_path = r"C:\WebDrivers\msedgedriver.exe"
+
+    #     # Configurar o EdgeOptions corretamente
+    #     options = Options()
+    #     options.use_chromium = True  # Isso é OBRIGATÓRIO!
+    #     #options.add_argument('--headless=new')     # Modo headless moderno
+    #     options.add_argument('--disable-gpu')
+    #     options.add_argument('--no-sandbox')
+    #     options.add_argument("--window-size=1920,1080")
+
+    #     # Cria o serviço com o caminho correto
+    #     service = Service(executable_path=driver_path)
+
+    #     # Inicia o navegador
+    #     driver = webdriver.Edge(service=service, options=options)
+    #     return driver

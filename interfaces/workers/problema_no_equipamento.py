@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 
 INTERVAL_SECONDS = 10 * 60
-TOTAL_WORKERS = 2
+TOTAL_WORKERS = 1
 
 def run_bot(worker_id: int):
     cmd = [

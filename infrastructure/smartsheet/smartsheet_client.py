@@ -1,0 +1,48 @@
+import smartsheet
+
+from core import settings
+
+class SmartsheetClient:
+    SMARTSHEET_TOKEN = settings.SMARTSHEET_TOKEN
+    
+    @staticmethod
+    def setup_smartsheet(sheet_id):
+        #comc chamar setup_smartsheet
+        #EX: sheet, rows, token, sheet_id, smart = setup_smartsheet('id_aqui')
+        
+        # Token de acesso da API Smartsheet
+        token = SmartsheetClient.SMARTSHEET_TOKEN
+        # Conecta à API
+        smart = smartsheet.Smartsheet(token)
+        # Id da planilha Smartsheet
+        sheet_id = sheet_id
+        # Assume valores da Planilha 
+        sheet = smart.Sheets.get_sheet(sheet_id)
+        rows = sheet.rows
+        return sheet, rows, token, sheet_id, smart
+    
+    @staticmethod
+    def update_smartsheet(column_title, cell_value, row_id, sheet_id, token):
+        # Declara max_rows como global para acessá-lo dentro da função
+            
+            smart = smartsheet.Smartsheet(token)
+            sheet = smart.Sheets.get_sheet(sheet_id)
+            # Encontra o ID da coluna com o título fornecido
+            column_id = [col.id for col in sheet.columns if col.title == column_title][0]
+            
+            # Cria uma célula na coluna com o título fornecido e o valor fornecido
+            cell = smartsheet.models.Cell()
+            cell.column_id = column_id
+            cell.value = cell_value
+            
+            # Cria uma linha e adiciona a célula a ela
+            updated_row = smartsheet.models.Row()
+            updated_row.id = row_id
+            updated_row.cells.append(cell)
+            
+            # Atualiza a linha na planilha
+            response = smart.Sheets.update_rows(sheet_id, [updated_row])
+            
+            # Verifica se a atualização foi bem-sucedida
+            while response.message != 'SUCCESS':
+                response = smart.Sheets.update_rows(sheet_id, [updated_row])

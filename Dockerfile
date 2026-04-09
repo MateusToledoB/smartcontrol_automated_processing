@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     gnupg \
+    unzip \
+    wget \
     libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
@@ -44,24 +46,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender1 \
     libxss1 \
     libxtst6 \
-    unzip \
-    wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Instala Edge
+# Instala Microsoft Edge
 RUN mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg && \
     echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge stable main" > /etc/apt/sources.list.d/microsoft-edge.list && \
     apt-get update && apt-get install -y --no-install-recommends microsoft-edge-stable && \
     rm -rf /var/lib/apt/lists/*
 
+# 🔥 Instala EdgeDriver compatível (SEM webdriver-manager)
+RUN EDGE_VERSION=$(microsoft-edge --version | grep -oP '\d+\.\d+\.\d+') && \
+    DRIVER_VERSION=$(curl -s "https://msedgedriver.azureedge.net/LATEST_RELEASE_$EDGE_VERSION") && \
+    curl -Lo /tmp/edgedriver.zip "https://msedgedriver.azureedge.net/$DRIVER_VERSION/edgedriver_linux64.zip" && \
+    unzip /tmp/edgedriver.zip -d /usr/local/bin/ && \
+    rm /tmp/edgedriver.zip && \
+    chmod +x /usr/local/bin/msedgedriver
+
 # Instala uv
 RUN pip install --no-cache-dir uv
 
-# Copia deps
+# Copia dependências
 COPY pyproject.toml uv.lock ./
 
-# Cria venv e instala tudo (inclusive webdriver-manager)
+# Cria ambiente virtual e instala deps
 RUN uv venv /app/.venv && \
     uv sync --frozen --no-dev
 

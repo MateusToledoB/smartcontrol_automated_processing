@@ -8,16 +8,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# 🔥 Dependências do sistema (Selenium + Edge)
+# Dependências do sistema (Selenium + Edge)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     curl \
     gnupg \
-    unzip \
-    wget \
-    fonts-liberation \
-    libvulkan1 \
-    xdg-utils \
     libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
@@ -49,30 +44,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender1 \
     libxss1 \
     libxtst6 \
+    unzip \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
-# 🔥 Instala Microsoft Edge
+# Instala Edge
 RUN mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg && \
     echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/edge stable main" > /etc/apt/sources.list.d/microsoft-edge.list && \
     apt-get update && apt-get install -y --no-install-recommends microsoft-edge-stable && \
     rm -rf /var/lib/apt/lists/*
 
-# 🔥 Instala uv
+# Instala uv
 RUN pip install --no-cache-dir uv
 
-# 🔥 Copia dependências primeiro (cache de build)
+# Copia deps
 COPY pyproject.toml uv.lock ./
 
-# 🔥 Cria venv e instala deps
+# Cria venv e instala tudo (inclusive webdriver-manager)
 RUN uv venv /app/.venv && \
-    uv sync --frozen --no-dev && \
-    /app/.venv/bin/pip install --no-cache-dir webdriver-manager
+    uv sync --frozen --no-dev
 
-# 🔥 Copia projeto
+# Copia projeto
 COPY . .
 
 ENV PATH="/app/.venv/bin:${PATH}"
 
-# 🔥 Comando principal
 CMD ["python", "interfaces/workers/problema_no_equipamento.py"]

@@ -3,6 +3,7 @@ FROM python:3.14-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
+    DEBIAN_FRONTEND=noninteractive \
     HEADLESS=true \
     EDGE_DRIVER_PATH=/usr/local/bin/msedgedriver
 
@@ -55,10 +56,14 @@ RUN mkdir -p /etc/apt/keyrings && \
     apt-get update && apt-get install -y --no-install-recommends microsoft-edge-stable && \
     rm -rf /var/lib/apt/lists/*
 
-# Instala msedgedriver fixo no build (sem download em runtime)
+# Instala msedgedriver no build (sem download em runtime), com fallback de URL
 RUN set -eux; \
     EDGE_VERSION="$(microsoft-edge --version | awk '{print $3}')"; \
-    wget -q -O /tmp/edgedriver_linux64.zip "https://msedgedriver.azureedge.net/${EDGE_VERSION}/edgedriver_linux64.zip"; \
+    DRIVER_URL_1="https://msedgedriver.azureedge.net/${EDGE_VERSION}/edgedriver_linux64.zip"; \
+    DRIVER_URL_2="https://msedgewebdriverstorage.blob.core.windows.net/edgewebdriver/${EDGE_VERSION}/edgedriver_linux64.zip"; \
+    if ! curl -fL --retry 3 --retry-delay 2 -o /tmp/edgedriver_linux64.zip "${DRIVER_URL_1}"; then \
+      curl -fL --retry 3 --retry-delay 2 -o /tmp/edgedriver_linux64.zip "${DRIVER_URL_2}"; \
+    fi; \
     unzip -q /tmp/edgedriver_linux64.zip -d /tmp; \
     mv /tmp/msedgedriver /usr/local/bin/msedgedriver; \
     chmod +x /usr/local/bin/msedgedriver; \
@@ -79,4 +84,4 @@ COPY . .
 
 ENV PATH="/app/.venv/bin:${PATH}"
 
-CMD ["bash", "-lc", "source /app/.venv/bin/activate && python interfaces/workers/problema_no_equipamento.py"]
+CMD ["python", "interfaces/workers/problema_no_equipamento.py"]

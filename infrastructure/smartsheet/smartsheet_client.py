@@ -1,6 +1,6 @@
 import smartsheet
 
-from core import settings
+from core.settings import settings
 
 class SmartsheetClient:
     SMARTSHEET_TOKEN = settings.SMARTSHEET_TOKEN

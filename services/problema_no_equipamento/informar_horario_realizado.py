@@ -260,6 +260,7 @@ class InformarHorarioRealizado:
                         SmartsheetClient.update_smartsheet('Motivo Recusa',f"{notify}", self.row_id, self.sheet_id, self.token)
                 except Exception as e:
                     print('erro ao classificar he')
+                    print(e)
                     SmartsheetClient.update_smartsheet('Motivo Recusa',f"Erro ao tentar classificar HE", self.row_id, self.sheet_id, self.token)
         except Exception as e:
             elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")

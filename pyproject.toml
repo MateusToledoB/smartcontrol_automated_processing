@@ -9,4 +9,5 @@ dependencies = [
     "requests>=2.33.1",
     "selenium>=4.41.0",
     "smartsheet-python-sdk>=3.7.2",
+    "webdriver-manager>=4.0.2",
 ]

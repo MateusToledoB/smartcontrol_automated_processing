@@ -43,7 +43,7 @@ class FaltaAbonoTemp:
             classificacao_fata = FaltaAbonoTemp.dict_classificacao_fata[self.classificacao_falta_lancado]
             # self.driver.switch_to.default_content()
 
-            lancamento_registrado = SeleniumUtils.verifica_lancamento(self.driver)
+            lancamento_registrado = SeleniumUtils.verifica_lancamento_Temp(self.driver)
             
             if lancamento_registrado:
                 if lancamento_registrado == classificacao_fata:

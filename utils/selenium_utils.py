@@ -271,3 +271,34 @@ class SeleniumUtils():
                 return motivo
 
         return None
+
+    @staticmethod
+    def verifica_lancamento_Temp(driver):
+        motivos = [
+            "Atestado Médico",
+            "Abandono",
+            "Falta",
+            "REP - Dia Justificado",
+            "Atestado Odontológico",
+            "Serviço Sindical",
+            "Afastado",
+            "Licença Paternidade",
+            "Licença Casamento",
+            "Treinamento / Reciclagem",
+            "Demissão",
+            "Integração",
+            "REP - Hora Justificado",
+            "Licença Óbito",
+            "Acompanhamento de Menores"
+        ]
+
+        for motivo in motivos:
+            elementos = driver.find_elements(
+                By.XPATH,
+                f"//td[normalize-space(text())='{motivo}']"
+            )
+
+            if elementos:
+                return motivo
+
+        return None

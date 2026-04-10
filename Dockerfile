@@ -68,3 +68,9 @@ RUN uv venv /app/.venv && \
 COPY . .
 
 ENV PATH="/app/.venv/bin:${PATH}"
+
+COPY start.sh .
+
+RUN chmod +x start.sh
+
+CMD ["sh", "start.sh"]

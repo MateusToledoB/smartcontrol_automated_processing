@@ -46,3 +46,4 @@ class SmartsheetClient:
             # Verifica se a atualização foi bem-sucedida
             while response.message != 'SUCCESS':
                 response = smart.Sheets.update_rows(sheet_id, [updated_row])
+            print(f"Update para: '{cell_value}'")

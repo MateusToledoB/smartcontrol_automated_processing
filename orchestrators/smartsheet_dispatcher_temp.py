@@ -55,7 +55,7 @@ class SmartsheetDispatcher:
                 row_id            = linha.id
                 linha_numero      = linha.row_number
 
-                print(f"Processando linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} - Status: {status} - Motivo Recusa: {motivo_recusa} - Classificação: {classificacao}")
+                print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
                 
                 if status == None:
                     SeleniumUtils.search_cpf(driver, cpf, data_registro)

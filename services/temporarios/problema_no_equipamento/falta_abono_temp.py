@@ -25,9 +25,9 @@ class FaltaAbonoTemp:
         "Atraso": "Atrasos",
         "Falta": "Falta",
         "Suspensão": "Suspensão",
-        "Integração Cliente": "Integração Cliente",
+        "Integração Cliente": "Integração",
         "Reciclagem": "Treinamento / Reciclagem",
-        "Liberado pelo Cliente": "Hora Justificada Empresa"
+        "Liberado pelo Cliente": "REP - Hora Justificado"
     }
 
     def adjust(self):
@@ -83,7 +83,7 @@ class FaltaAbonoTemp:
                     ).click()
                     time.sleep(1)  
                     WebDriverWait(self.driver, 10).until(
-                        EC.element_to_be_clickable((By.XPATH, f"//*[@id='motivo_abonar']//*[normalize-space(text())='Dia Justificado Empresa']"))
+                        EC.element_to_be_clickable((By.XPATH, f"//*[@id='motivo_abonar']//*[normalize-space(text())='REP - Dia Justificado']"))
                     ).click()
                     time.sleep(1)
                     WebDriverWait(self.driver, 10).until(
@@ -145,9 +145,13 @@ class FaltaAbonoTemp:
                                 EC.element_to_be_clickable((By.XPATH, "//input[@type='radio' and normalize-space(following-sibling::text()[1])='Dispensa / suspensão']"))
                             ).click()
                     time.sleep(1)
-                    WebDriverWait(self.driver, 10).until(
+                    print('Indo clicar em motivo abonar')
+                    motivo_abono = WebDriverWait(self.driver, 10).until(
                         EC.element_to_be_clickable((By.XPATH, "//*[@id='motivo_abonar']"))
-                    ).click()
+                                                                        
+                    )
+                    self.driver.execute_script("arguments[0].scrollIntoView(true);", motivo_abono)
+                    motivo_abono.click()
                     time.sleep(1)  
                     try:
                         WebDriverWait(self.driver, 10).until(
@@ -173,11 +177,16 @@ class FaltaAbonoTemp:
                     SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
 
         except Exception as e:
-                print(e)
-                elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
-                SmartsheetClient.update_smartsheet("Motivo Recusa", 'Ponto fechado.', self.row_id, self.sheet_id,self.token)
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
-                return
+                try:
+                    elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
+                    SmartsheetClient.update_smartsheet("Motivo Recusa", 'Ponto fechado.', self.row_id, self.sheet_id,self.token)
+                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
+                    return
+                except:
+                    notify_colaborador_nao_encontrado = self.driver.find_element(By.XPATH, "//*[text()='Nenhum colaborador corresponde aos filtros de pesquisa selecionados']")
+                    SmartsheetClient.update_smartsheet("Status", "Não tratado", self.row_id, self.sheet_id, self.token)
+                    SmartsheetClient.update_smartsheet("Motivo Recusa", "CPF não encontrado", self.row_id, self.sheet_id, self.token)
+
 
 
 

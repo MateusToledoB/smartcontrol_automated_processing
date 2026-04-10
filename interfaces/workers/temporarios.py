@@ -1,38 +1,42 @@
 import subprocess
 import sys
+import time
+from datetime import datetime
 
-# Cria um comando em formtado de array, passando o worker_id e exceutando main como um módulo do sistema de pacotes
-def run_bot(worker_id):
-    comando = [
+INTERVAL_SECONDS = 10 * 60
+TOTAL_WORKERS = 1
+
+def run_bot(worker_id: int):
+    cmd = [
         sys.executable,
-        "orchestrators/smartsheet_dispatcher_temp",
-        str(worker_id)
+        "-m",
+        "orchestrators.smartsheet_dispatcher_temp",
+        str(worker_id),
     ]
-    return subprocess.Popen(comando)
+    return subprocess.Popen(cmd)
 
-def main():
-
-    # conjunto dos bots
+def run_once():
     processes = []
-
-    print("Iniciando 4 bots em paralelo...\n")
-
-    # Executa os 4 bots
-    # cria um novo processo dombot e adiciona este processo a lista 
-    for worker_id in range(1, 5):
+    for worker_id in range(1, TOTAL_WORKERS + 1):
         p = run_bot(worker_id)
         processes.append(p)
-        print(f"Bot {worker_id} iniciado. PID={p.pid}")
+        print(f"[{datetime.now()}] Worker {worker_id} iniciado. PID={p.pid}")
 
-    print("\nTodos os bots foram iniciados. Aguardando finalização...")
-
-    # Percorre a lista dos bots aguardando cada processo finalizar para ai sim finalizar o manager, evitando conflitos 
     for p in processes:
         p.wait()
 
-    print("\nTodos os bots finalizaram.")
+def main():
+    while True:
+        start = time.monotonic()
+        try:
+            run_once()
+        except Exception as e:
+            print(f"[{datetime.now()}] Erro no ciclo: {e}")
+
+        elapsed = time.monotonic() - start
+        sleep_for = max(0, INTERVAL_SECONDS - elapsed)
+        print(f"[{datetime.now()}] Próximo ciclo em {sleep_for:.0f}s")
+        time.sleep(sleep_for)
 
 if __name__ == "__main__":
     main()
-
-       

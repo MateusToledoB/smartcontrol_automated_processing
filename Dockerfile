@@ -68,6 +68,3 @@ RUN uv venv /app/.venv && \
 COPY . .
 
 ENV PATH="/app/.venv/bin:${PATH}"
-
-CMD ["python", "interfaces/workers/problema_no_equipamento.py"]
-CMD ["python", "interfaces/workers/temporarios.py"]

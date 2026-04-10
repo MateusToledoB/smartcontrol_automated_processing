@@ -23,6 +23,7 @@ class ApontamentoImpar:
 
     def adjust(self):
         try:
+            tratar = True
             WebDriverWait(self.driver, 200).until(
                 EC.invisibility_of_element_located((By.XPATH, "//*[@data-text='Aguarde...']"))
             )
@@ -149,7 +150,7 @@ class ApontamentoImpar:
                                 tratar = False
                                 
                         if tratar == True:
-                            # print(f'A data a ser lançada é: {data_escrever}')
+                            print(f'A data a ser lançada é: {data_escrever}')
                             data_marcacao = self.driver.find_element(By.XPATH, '//*[@id="data_marcacao"]')
                             self.driver.execute_script("arguments[0].value = arguments[1];", data_marcacao, data_escrever)
                             time.sleep(1)
@@ -305,6 +306,9 @@ class ApontamentoImpar:
                     SmartsheetClient.update_smartsheet('Motivo Recusa', 'Excesso batidas encontrado', self.row_id, self.sheet_id, self.token)
                     SmartsheetClient.update_smartsheet('Status', 'Não Tratado', self.row_id, self.sheet_id, self.token)
         except Exception as e:
+            print(e)
+            print('erroo')
+            time.sleep(100)
             elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
             SmartsheetClient.update_smartsheet("Motivo Recusa", 'Ponto fechado.', self.row_id, self.sheet_id, self.token)
             SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)

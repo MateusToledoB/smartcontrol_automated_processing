@@ -197,12 +197,13 @@ class ApontamentoImpar:
                                     
                                     
                                     self.driver.switch_to.default_content()
-                                    WebDriverWait(self.driver, 10).until(
-                                            EC.visibility_of_element_located((By.XPATH, '//*[@title="Fechar"]'))
-                                        ).click()
+                                    elemento = WebDriverWait(self.driver, 10).until(
+                                        EC.presence_of_element_located((By.XPATH, '//*[@title="Fechar"]'))
+                                    )
+                                    self.driver.execute_script("arguments[0].click();", elemento)
 
                                     try:
-                                        elemento_hora_extra = WebDriverWait(self.driver, 10).until(
+                                        elemento_hora_extra = WebDriverWait(self.driver, 5).until(
                                             EC.visibility_of_element_located((By.XPATH, f"//tr[.//*[normalize-space(text())='{self.data_registro}']]//*[contains(@style,'color: red')]"))
                                         )
 

@@ -264,9 +264,16 @@ class InformarHorarioRealizado:
                     print(e)
                     SmartsheetClient.update_smartsheet('Motivo Recusa',f"Erro ao tentar classificar HE", self.row_id, self.sheet_id, self.token)
         except Exception as e:
-            elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
-            SmartsheetClient.update_smartsheet("Motivo Recusa", 'Ponto fechado.', self.row_id, self.sheet_id, self.token)
-            SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
+            try:
+                elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
+                SmartsheetClient.update_smartsheet("Motivo Recusa", 'Ponto fechado.', self.row_id, self.sheet_id, self.token)
+                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
+            except:
+                lancamento_registrado = SeleniumUtils.verifica_lancamento(self.driver)
+                if lancamento_registrado is not None:
+                    SmartsheetClient.update_smartsheet("Motivo Recusa", lancamento_registrado, self.row_id, self.sheet_id, self.token)
+                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
+               
             
                 
 

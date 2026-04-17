@@ -4,6 +4,7 @@ import time
 from core.settings import settings
 from infrastructure.smartsheet.smartsheet_client import SmartsheetClient
 from services.temporarios.problema_no_equipamento.horario_contratual_previsto_temp import HorarioContratualPrevistoTemp
+from services.temporarios.problema_no_equipamento.informar_horario_realizado_temp import InformarHorarioRealizadoTemp
 from services.temporarios.problema_no_equipamento.falta_abono_temp import FaltaAbonoTemp
 
 from utils.driver_factory import DriverFactory
@@ -54,9 +55,8 @@ class SmartsheetDispatcher:
                 row_id            = linha.id
                 linha_numero      = linha.row_number
 
-                print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
-                
                 if status == None:
+                    print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
                     SeleniumUtils.search_cpf(driver, cpf, data_registro)
 
                     match str(classificacao).strip().lower():
@@ -72,7 +72,18 @@ class SmartsheetDispatcher:
                             service.adjust()
                             driver.refresh()
                         case "problema no equipamento - informar horário realizado":
-                            pass
+                            service = InformarHorarioRealizadoTemp(
+                                driver = driver,
+                                row_id = row_id,
+                                sheet_id = sheet_id,
+                                token = token,
+                                data_registro = data_registro,
+                                entrada = entrada,
+                                saida = saida,
+                                intervalo = intervalo
+                            )
+                            service.adjust()
+                            driver.refresh()
 
                         case "abandono" | "atraso" | "falta" | "suspensão" | "integração cliente" | "reciclagem" | "liberado pelo cliente":
                             service = FaltaAbonoTemp(

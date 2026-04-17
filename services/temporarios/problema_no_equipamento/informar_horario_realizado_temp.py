@@ -18,7 +18,6 @@ class InformarHorarioRealizadoTemp:
         self.sheet_id = sheet_id
         self.token = token
         self.data_registro = data_registro
-        self.verificar_he = False
         self.entrada = entrada
         self.saida = saida
         self.intervalo = intervalo
@@ -29,51 +28,20 @@ class InformarHorarioRealizadoTemp:
                 SmartsheetClient.update_smartsheet("Motivo Recusa", "Sem entrada ou saida informadas", self.row_id, self.sheet_id, self.token)
                 SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token) 
                 
-            
-            self.driver.switch_to.default_content()
-            WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, '//*[@id="scroll_table_1"]/tbody/tr[3]/td[1]/a/img'))
-            ).click()
-
-            time.sleep(1)
-
-            WebDriverWait(self.driver, 200).until(
-                EC.invisibility_of_element_located((By.XPATH, "//*[@data-text='Aguarde...']"))
-            )
-            time.sleep(1)
-
-            SeleniumUtils.iframe_acess(self.driver, '//*[@id="v-app-div"]/div[1]/div/div/div[2]/div/iframe')
-
-            campo_data = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//*[@id="data_jornada"]'))
-            )
-
-            self.driver.execute_script(
-                "arguments[0].value = arguments[1];", 
-                campo_data, 
-                self.data_registro
-            )
+            SeleniumUtils.iframe_acess(self.driver, "/html/body/div[3]/div/div[1]/div/div/div[2]/div/iframe")
 
             WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, '//*[@id="data_jornada"]'))
+                EC.element_to_be_clickable((By.XPATH, "//a[@title='Editar']"))
             ).click()
 
-            WebDriverWait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//*[text()='Data da jornada :']"))
-            ).click()
+            time.sleep(2)
 
-            time.sleep(1)
+            SeleniumUtils.iframe_acess(self.driver, "/html/body/div[2]/div/div[1]/div/div/div[2]/div/iframe")
 
-            WebDriverWait(self.driver, 200).until(
-                EC.invisibility_of_element_located((By.XPATH, "//*[@data-text='Aguarde...']"))
-            )
-
-            time.sleep(3)
-  
-            horario_contratual_colaborador =  self.driver.find_element(By.XPATH,'//*[@selected="selected"]')
+            horario_contratual_colaborador     =  self.driver.find_element(By.XPATH,'//*[@selected="selected"]')
             horario_contratual_colaborador_str = horario_contratual_colaborador.get_attribute("innerText")
-            #print(f'Horário contratual colaborador: {horario_contratual_colaborador_str}')
-
+            print(f'Horário contratual colaborador: {horario_contratual_colaborador_str}')
+          
             if "0824" in horario_contratual_colaborador_str:
                 SmartsheetClient.update_smartsheet("Motivo Recusa", 'Horista', self.row_id, self.sheet_id, self.token)
                 SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
@@ -183,85 +151,9 @@ class InformarHorarioRealizadoTemp:
                 SmartsheetClient.update_smartsheet("Motivo Recusa", f"erro: {lancamento_1}", self.row_id, self.sheet_id, self.token)
 
                 SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
-
-            if self.verificar_he:
-                try:
-                    self.driver.switch_to.default_content()
-                    elemento = WebDriverWait(self.driver, 10).until(
-                        EC.presence_of_element_located((By.XPATH, '//*[@title="Fechar"]'))
-                    )
-                    self.driver.execute_script("arguments[0].click();", elemento)
-
-                    try:
-                        elemento_hora_extra = WebDriverWait(self.driver, 10).until(
-                            EC.visibility_of_element_located((By.XPATH, f"//tr[.//*[normalize-space(text())='{self.data_registro}']]//*[contains(@style,'color: red')]"))
-                        )
-                    except:
-                        return
-
-                    WebDriverWait(self.driver, 5).until(
-                        EC.element_to_be_clickable((By.XPATH, "//*[@id='hora_extra_button']"))
-                    ).click()
-                    #print("Clicou no botão de hora extra")
-                    SeleniumUtils.iframe_acess(self.driver, "/html/body/div[3]/div/div[1]/div/div/div[2]/div/iframe")
-                    #print('acessou o iframe')
-                    xpath_select = f"(//div[@class='body'])[1]//table//tr[td[normalize-space()='{self.data_registro}']]//select"
-                    # #print(xpath_select)
-
-                    select_hora_extra = WebDriverWait(self.driver, 10).until(
-                        EC.visibility_of_element_located((By.XPATH, xpath_select))
-                    )
-                    
-                    try:
-                        select_hora_extra.click()
-
-                    except Exception:
-                        select_hora_extra.click()
-                    
-                    elemento_ineficiencia = WebDriverWait(self.driver, 10).until(
-                        EC.element_to_be_clickable((
-                            By.XPATH, 
-                            f"""
-                            (//div[@class='body'])[1]
-                            //table
-                            //tr[td[normalize-space()='{self.data_registro}']]
-                            //select
-                            /option[normalize-space()='Ineficiência']
-                            """
-                            ))
-                        )
-                    elemento_ineficiencia.click()
-
-                    input_cr = WebDriverWait(self.driver, 10).until(
-                            EC.visibility_of_element_located((
-                                By.XPATH,
-                                f"""
-                                //td[normalize-space()='{self.data_registro}']
-                                /ancestor::tr
-                                /following-sibling::tr
-                                //td[contains(normalize-space(),'CR')]
-                                /following-sibling::td//input[@type='text']
-                                """
-                            ))
-                        )
-                    input_cr.send_keys("54648")
-                    elemento_ineficiencia.click()
-                    time.sleep(7)
-                    WebDriverWait(self.driver, 10).until(
-                        EC.visibility_of_element_located((By.XPATH, "//*[@value='Salvar']"))
-                    ).click()
-                    time.sleep(1)
-                    notify = WebDriverWait(self.driver, 50).until(EC.presence_of_element_located((By.XPATH,'//*[@id="top_pad_div"]/div/div/div[1]/span')))
-                    notify = notify.get_attribute("innerText")
-                    # #print(f'Notificação hora extra: {notify}')
-                    if notify == "Registros salvos com sucesso":
-                        SmartsheetClient.update_smartsheet('Motivo Recusa',f"HE classificada", self.row_id, self.sheet_id, self.token)
-                    else:
-                        SmartsheetClient.update_smartsheet('Motivo Recusa',f"{notify}", self.row_id, self.sheet_id, self.token)
-                except Exception as e:
-                    #print(e)
-                    SmartsheetClient.update_smartsheet('Motivo Recusa',f"Erro ao tentar classificar HE", self.row_id, self.sheet_id, self.token)
         except Exception as e:
+            print(f'erro: {e}')
+            time.sleep(200)
             try:
                 elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
                 SmartsheetClient.update_smartsheet("Motivo Recusa", 'Ponto fechado.', self.row_id, self.sheet_id,self.token)

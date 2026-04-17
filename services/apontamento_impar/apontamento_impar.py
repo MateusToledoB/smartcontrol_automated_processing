@@ -150,7 +150,7 @@ class ApontamentoImpar:
                                 tratar = False
                                 
                         if tratar == True:
-                            print(f'A data a ser lançada é: {data_escrever}')
+                            # print(f'A data a ser lançada é: {data_escrever}')
                             data_marcacao = self.driver.find_element(By.XPATH, '//*[@id="data_marcacao"]')
                             self.driver.execute_script("arguments[0].value = arguments[1];", data_marcacao, data_escrever)
                             time.sleep(1)

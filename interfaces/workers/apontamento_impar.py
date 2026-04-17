@@ -20,7 +20,7 @@ def run_once():
     for worker_id in range(1, TOTAL_WORKERS + 1):
         p = run_bot(worker_id)
         processes.append(p)
-        print(f"[{datetime.now()}] Worker {worker_id} iniciado. PID={p.pid}")
+        print(f"[{datetime.now()}] Worker {worker_id} Apontamento impar iniciado. PID={p.pid}")
 
     for p in processes:
         p.wait()

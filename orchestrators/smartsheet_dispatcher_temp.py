@@ -23,7 +23,6 @@ class SmartsheetDispatcher:
         start = indice_worker * base + min(indice_worker, resto)
         end = start + base + (1 if indice_worker < resto else 0)
 
-        print(f"BOT {worker_id} processando linhas {start} até {end}")
         bloco_linhas = sheet.rows[start:end]
 
         driver = DriverFactory.create_edge_driver()
@@ -73,7 +72,7 @@ class SmartsheetDispatcher:
                             service.adjust()
                             driver.refresh()
                         case "problema no equipamento - informar horário realizado":
-                            print('oi')
+                            pass
 
                         case "abandono" | "atraso" | "falta" | "suspensão" | "integração cliente" | "reciclagem" | "liberado pelo cliente":
                             service = FaltaAbonoTemp(

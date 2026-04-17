@@ -70,7 +70,7 @@ class SeleniumUtils():
         time.sleep(2)
         notify = WebDriverWait(driver, 50).until(EC.presence_of_element_located((By.XPATH,'//*[@id="top_pad_div"]/div/div/div[1]/span')))
         notify = notify.get_attribute("innerText")
-        print(f"Notificação após salvar marcação: {notify}")
+        # print(f"Notificação após salvar marcação: {notify}")
         return notify
     
     @staticmethod

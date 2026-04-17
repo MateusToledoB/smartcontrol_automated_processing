@@ -59,7 +59,7 @@ class FaltaAbonoTemp:
 
             horario_contratual_colaborador     =  self.driver.find_element(By.XPATH,'//*[@selected="selected"]')
             horario_contratual_colaborador_str = horario_contratual_colaborador.get_attribute("innerText")
-            print(f"Horário contratual do colaborador: {horario_contratual_colaborador_str}")
+            #print(f"Horário contratual do colaborador: {horario_contratual_colaborador_str}")
             if horario_contratual_colaborador_str == "FOLGA":
                 SmartsheetClient.update_smartsheet("Motivo Recusa", "Dia de folga", self.row_id, self.sheet_id,self.token)
                 SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
@@ -100,7 +100,7 @@ class FaltaAbonoTemp:
                 elemento_tempo_falta = self.driver.find_element(By.XPATH, "//font[@color='red']")
                 
                 texto_tempo_falta = elemento_tempo_falta.text.strip() 
-                print(f'Tempo de falta: {texto_tempo_falta}')
+                #print(f'Tempo de falta: {texto_tempo_falta}')
                 if texto_tempo_falta == '':
                     SmartsheetClient.update_smartsheet("Motivo Recusa", 'Sem tempo de falta gerado', self.row_id, self.sheet_id,self.token)
                     SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
@@ -145,7 +145,7 @@ class FaltaAbonoTemp:
                                 EC.element_to_be_clickable((By.XPATH, "//input[@type='radio' and normalize-space(following-sibling::text()[1])='Dispensa / suspensão']"))
                             ).click()
                     time.sleep(1)
-                    print('Indo clicar em motivo abonar')
+                    #print('Indo clicar em motivo abonar')
                     motivo_abono = WebDriverWait(self.driver, 10).until(
                         EC.element_to_be_clickable((By.XPATH, "//*[@id='motivo_abonar']"))
                                                                         

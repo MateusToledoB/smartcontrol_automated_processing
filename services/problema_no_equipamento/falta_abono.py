@@ -117,7 +117,7 @@ class FaltaAbono:
                 elemento_tempo_falta = self.driver.find_element(By.XPATH, "//font[@color='red']")
                 
                 texto_tempo_falta = elemento_tempo_falta.text.strip() 
-                print(f'Tempo de falta: {texto_tempo_falta}')
+                # #print(f'Tempo de falta: {texto_tempo_falta}')
                 if texto_tempo_falta == '':
                     SmartsheetClient.update_smartsheet("Motivo Recusa", 'Sem tempo de falta gerado', self.row_id, self.sheet_id,self.token)
                     SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
@@ -190,7 +190,7 @@ class FaltaAbono:
                     SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
 
         except Exception as e:
-                print(e)
+                #print(e)
                 elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
                 SmartsheetClient.update_smartsheet("Motivo Recusa", 'Ponto fechado.', self.row_id, self.sheet_id,self.token)
                 SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)

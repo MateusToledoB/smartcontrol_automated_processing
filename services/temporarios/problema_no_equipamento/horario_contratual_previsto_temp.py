@@ -33,7 +33,7 @@ class HorarioContratualPrevistoTemp:
 
             iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
 
-            print("Entrando no primeiro iframe...")
+            #print("Entrando no primeiro iframe...")
 
             self.driver.switch_to.frame(iframes[0])
             campo_data_incial = WebDriverWait(self.driver, 15).until(
@@ -71,7 +71,7 @@ class HorarioContratualPrevistoTemp:
             element = self.driver.switch_to.active_element
             notify = WebDriverWait(self.driver, 60).until(EC.presence_of_element_located((By.XPATH, "//div[@role='alert']//div[contains(@class, 'v-alert__content')]//span[@style='font-size: 11px;']")))
             texto_notify = notify.text
-            print(f"Texto da notificação: {texto_notify}")
+            #print(f"Texto da notificação: {texto_notify}")
             match texto_notify:
                 case "1 dias de 1 colaboradores foram preenchidos. Alterações específicas devem ser feitas no módulo de tratamento.":
                     SmartsheetClient.update_smartsheet("Status", "Tratado", self.row_id, self.sheet_id, self.token) 

@@ -72,7 +72,7 @@ class InformarHorarioRealizadoTemp:
   
             horario_contratual_colaborador =  self.driver.find_element(By.XPATH,'//*[@selected="selected"]')
             horario_contratual_colaborador_str = horario_contratual_colaborador.get_attribute("innerText")
-            print(f'Horário contratual colaborador: {horario_contratual_colaborador_str}')
+            #print(f'Horário contratual colaborador: {horario_contratual_colaborador_str}')
 
             if "0824" in horario_contratual_colaborador_str:
                 SmartsheetClient.update_smartsheet("Motivo Recusa", 'Horista', self.row_id, self.sheet_id, self.token)
@@ -86,23 +86,23 @@ class InformarHorarioRealizadoTemp:
             else:
                 horas = re.findall(r'(?<!CH\s)(\d{2}):(\d{2})', horario_contratual_colaborador_str)
                 entrada_horario_contratual_time, saida_horario_contratual_time = SeleniumUtils.retorna_entrada_e_saida_HC(horas)
-                print(f'Horario entrada HC: {entrada_horario_contratual_time}, Horário saída HC: {saida_horario_contratual_time}')
-                print(f" Saida informada na planilha: {self.saida} ")
+                #print(f'Horario entrada HC: {entrada_horario_contratual_time}, Horário saída HC: {saida_horario_contratual_time}')
+                #print(f" Saida informada na planilha: {self.saida} ")
 
-                print(f'total horas: {len(horas)}')
+                #print(f'total horas: {len(horas)}')
                 if len(horas) == 2:
                     tempo_intervalo = "Sem intervalo"
                 else:
                     inicio_intervalo, fim_intervalo = SeleniumUtils.extrair_intervalo(horario_contratual_colaborador_str)
                     tempo_intervalo = SeleniumUtils.calcular_tempo_intervalo(inicio_intervalo, fim_intervalo)
-                    print(f"Tempo do intervalo: {tempo_intervalo}")
-                    print(f'intervalo informado na planilha: {self.intervalo} ')
+                    #print(f"Tempo do intervalo: {tempo_intervalo}")
+                    #print(f'intervalo informado na planilha: {self.intervalo} ')
 
             trs = self.driver.find_elements(
                 By.XPATH,
                 '//td[normalize-space()="Incluído"]/ancestor::tr/following-sibling::tr[following-sibling::tr/td[normalize-space()="Carga horária :"]]'
             )
-            print(f'total trs: {len(trs)}')
+            #print(f'total trs: {len(trs)}')
             
             if len(trs) > 0:
                 SmartsheetClient.update_smartsheet("Motivo Recusa", 'Colaborador com batidas eletronicas', self.row_id, self.sheet_id, self.token)
@@ -111,7 +111,7 @@ class InformarHorarioRealizadoTemp:
                 
 
             saida_maior_que_hc_2h = SeleniumUtils.saida_maior_que_hc_em_2h(saida_horario_contratual_time, self.saida)
-            print(f'Saída maior que HC em 2h: {saida_maior_que_hc_2h}')
+            #print(f'Saída maior que HC em 2h: {saida_maior_que_hc_2h}')
             
             if self.entrada == "Preencher HC":
                 self.entrada = str(entrada_horario_contratual_time.strftime("%H:%M"))
@@ -136,7 +136,7 @@ class InformarHorarioRealizadoTemp:
                         '//td[normalize-space()="Incluído"]/ancestor::tr/following-sibling::tr[following-sibling::tr/td[normalize-space()="Carga horária :"]]'
                     )
                     total_batidas = len(trs)
-                    print(f'Total de batidas após lançamentos: {total_batidas}')
+                    #print(f'Total de batidas após lançamentos: {total_batidas}')
                     
                     if total_batidas == 4:
                             SmartsheetClient.update_smartsheet("Status", "Tratado", self.row_id, self.sheet_id, self.token)
@@ -153,11 +153,11 @@ class InformarHorarioRealizadoTemp:
                                 data_saida_int,
                                 horario_saida_intervalo,
                             ) = SeleniumUtils.gerar_intervalo(self.data_registro, self.entrada, self.saida, self.intervalo)
-                            print(
-                                "Horários de intervalo a serem lançados: "
-                                f"{data_entrada_int} {horario_entrada_intervalo} - "
-                                f"{data_saida_int} {horario_saida_intervalo}"
-                            )
+                            # print(
+                            #     "Horários de intervalo a serem lançados: "
+                            #     f"{data_entrada_int} {horario_entrada_intervalo} - "
+                            #     f"{data_saida_int} {horario_saida_intervalo}"
+                            # )
 
                             lancamento_intervalo_1 =SeleniumUtils.lancar_horario_no_sistema(data_entrada_int, horario_entrada_intervalo, self.driver)
                             if lancamento_intervalo_1 == "Registro realizado com sucesso":
@@ -202,11 +202,11 @@ class InformarHorarioRealizadoTemp:
                     WebDriverWait(self.driver, 5).until(
                         EC.element_to_be_clickable((By.XPATH, "//*[@id='hora_extra_button']"))
                     ).click()
-                    print("Clicou no botão de hora extra")
+                    #print("Clicou no botão de hora extra")
                     SeleniumUtils.iframe_acess(self.driver, "/html/body/div[3]/div/div[1]/div/div/div[2]/div/iframe")
-                    print('acessou o iframe')
+                    #print('acessou o iframe')
                     xpath_select = f"(//div[@class='body'])[1]//table//tr[td[normalize-space()='{self.data_registro}']]//select"
-                    # print(xpath_select)
+                    # #print(xpath_select)
 
                     select_hora_extra = WebDriverWait(self.driver, 10).until(
                         EC.visibility_of_element_located((By.XPATH, xpath_select))
@@ -253,13 +253,13 @@ class InformarHorarioRealizadoTemp:
                     time.sleep(1)
                     notify = WebDriverWait(self.driver, 50).until(EC.presence_of_element_located((By.XPATH,'//*[@id="top_pad_div"]/div/div/div[1]/span')))
                     notify = notify.get_attribute("innerText")
-                    # print(f'Notificação hora extra: {notify}')
+                    # #print(f'Notificação hora extra: {notify}')
                     if notify == "Registros salvos com sucesso":
                         SmartsheetClient.update_smartsheet('Motivo Recusa',f"HE classificada", self.row_id, self.sheet_id, self.token)
                     else:
                         SmartsheetClient.update_smartsheet('Motivo Recusa',f"{notify}", self.row_id, self.sheet_id, self.token)
                 except Exception as e:
-                    print(e)
+                    #print(e)
                     SmartsheetClient.update_smartsheet('Motivo Recusa',f"Erro ao tentar classificar HE", self.row_id, self.sheet_id, self.token)
         except Exception as e:
             try:

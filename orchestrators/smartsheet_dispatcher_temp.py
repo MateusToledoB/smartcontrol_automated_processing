@@ -30,6 +30,8 @@ class SmartsheetDispatcher:
 
         SeleniumUtils.login_motus(driver, settings.USER_MOTUS, settings.PASSWORD_MOTUS)
         try:
+            all_updates = []
+
             for linha in bloco_linhas:
           
                 dados_celulas = {coluna.title: linha.cells[nome_coluna_para_indice[coluna.title]].value
@@ -57,10 +59,10 @@ class SmartsheetDispatcher:
 
                 if status == None:
                     print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
+                    
                     SeleniumUtils.search_cpf(driver, cpf, data_registro)
-
+                    
                     match str(classificacao).strip().lower():
-                        
                         case "horário contratual previsto (problema no equipamento)":
                             service = HorarioContratualPrevistoTemp(
                                 driver=driver,
@@ -69,8 +71,9 @@ class SmartsheetDispatcher:
                                 token=token,
                                 data_registro=data_registro,
                             )
-                            service.adjust()
+                            updates = service.adjust()
                             driver.refresh()
+
                         case "problema no equipamento - informar horário realizado":
                             service = InformarHorarioRealizadoTemp(
                                 driver = driver,
@@ -82,7 +85,7 @@ class SmartsheetDispatcher:
                                 saida = saida,
                                 intervalo = intervalo
                             )
-                            service.adjust()
+                            updates = service.adjust()
                             driver.refresh()
 
                         case "abandono" | "atraso" | "falta" | "suspensão" | "integração cliente" | "reciclagem" | "liberado pelo cliente":
@@ -94,13 +97,19 @@ class SmartsheetDispatcher:
                                 data_registro = data_registro,
                                 classificacao_falta_lancado = classificacao
                             )
-                            service.adjust()
+                            updates = service.adjust()
                             driver.refresh()
-                        
-                          
-               
+
+                    if updates:
+                        print(updates)
+                        all_updates.append({
+                            "row_id": row_id,
+                            "updates": updates
+                        })    
         finally:
             driver.quit()
+            SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_TEMPORARIOS)
+            
 
 if __name__ == "__main__":
     import sys

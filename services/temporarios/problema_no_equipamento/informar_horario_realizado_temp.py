@@ -1,4 +1,4 @@
-import datetime as dt
+﻿import datetime as dt
 from datetime import datetime, timedelta
 import re
 import time
@@ -7,9 +7,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from infrastructure.smartsheet.smartsheet_client import SmartsheetClient
-from infrastructure.notifications.teams_webhook_client import TeamsWebhookClient
 from utils.selenium_utils import SeleniumUtils
+
 
 class InformarHorarioRealizadoTemp:
     def __init__(self, driver, row_id, sheet_id, token, data_registro, entrada, saida, intervalo):
@@ -23,11 +22,13 @@ class InformarHorarioRealizadoTemp:
         self.intervalo = intervalo
 
     def adjust(self):
+        updates = []
         try:
             if self.entrada is None or self.saida is None:
-                SmartsheetClient.update_smartsheet("Motivo Recusa", "Sem entrada ou saida informadas", self.row_id, self.sheet_id, self.token)
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token) 
-                
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": "Sem entrada ou saida informadas"})
+                return updates
+
             SeleniumUtils.iframe_acess(self.driver, "/html/body/div[3]/div/div[1]/div/div/div[2]/div/iframe")
 
             WebDriverWait(self.driver, 10).until(
@@ -38,49 +39,40 @@ class InformarHorarioRealizadoTemp:
 
             SeleniumUtils.iframe_acess(self.driver, "/html/body/div[2]/div/div[1]/div/div/div[2]/div/iframe")
 
-            horario_contratual_colaborador     =  self.driver.find_element(By.XPATH,'//*[@selected="selected"]')
+            horario_contratual_colaborador = self.driver.find_element(By.XPATH, '//*[@selected="selected"]')
             horario_contratual_colaborador_str = horario_contratual_colaborador.get_attribute("innerText")
-            print(f'Horário contratual colaborador: {horario_contratual_colaborador_str}')
-          
+            # print(f"Horário contratual colaborador: {horario_contratual_colaborador_str}")
+
             if "0824" in horario_contratual_colaborador_str:
-                SmartsheetClient.update_smartsheet("Motivo Recusa", 'Horista', self.row_id, self.sheet_id, self.token)
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
-                return
-
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": "Horista"})
+                return updates
             elif horario_contratual_colaborador_str == "FOLGA":
-                SmartsheetClient.update_smartsheet("Motivo Recusa", 'Dia de folga', self.row_id, self.sheet_id, self.token)
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
-                return
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": "Dia de folga"})
+                return updates
             else:
-                horas = re.findall(r'(?<!CH\s)(\d{2}):(\d{2})', horario_contratual_colaborador_str)
+                horas = re.findall(r"(?<!CH\s)(\d{2}):(\d{2})", horario_contratual_colaborador_str)
                 entrada_horario_contratual_time, saida_horario_contratual_time = SeleniumUtils.retorna_entrada_e_saida_HC(horas)
-                #print(f'Horario entrada HC: {entrada_horario_contratual_time}, Horário saída HC: {saida_horario_contratual_time}')
-                #print(f" Saida informada na planilha: {self.saida} ")
 
-                #print(f'total horas: {len(horas)}')
                 if len(horas) == 2:
                     tempo_intervalo = "Sem intervalo"
                 else:
                     inicio_intervalo, fim_intervalo = SeleniumUtils.extrair_intervalo(horario_contratual_colaborador_str)
                     tempo_intervalo = SeleniumUtils.calcular_tempo_intervalo(inicio_intervalo, fim_intervalo)
-                    #print(f"Tempo do intervalo: {tempo_intervalo}")
-                    #print(f'intervalo informado na planilha: {self.intervalo} ')
 
             trs = self.driver.find_elements(
                 By.XPATH,
                 '//td[normalize-space()="Incluído"]/ancestor::tr/following-sibling::tr[following-sibling::tr/td[normalize-space()="Carga horária :"]]'
             )
-            #print(f'total trs: {len(trs)}')
-            
+
             if len(trs) > 0:
-                SmartsheetClient.update_smartsheet("Motivo Recusa", 'Colaborador com batidas eletronicas', self.row_id, self.sheet_id, self.token)
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
-                return
-                
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": "Colaborador com batidas eletronicas"})
+                return updates
 
             saida_maior_que_hc_2h = SeleniumUtils.saida_maior_que_hc_em_2h(saida_horario_contratual_time, self.saida)
-            #print(f'Saída maior que HC em 2h: {saida_maior_que_hc_2h}')
-            
+
             if self.entrada == "Preencher HC":
                 self.entrada = str(entrada_horario_contratual_time.strftime("%H:%M"))
             lancamento_1 = SeleniumUtils.lancar_horario_no_sistema(self.data_registro, self.entrada, self.driver)
@@ -104,16 +96,17 @@ class InformarHorarioRealizadoTemp:
                         '//td[normalize-space()="Incluído"]/ancestor::tr/following-sibling::tr[following-sibling::tr/td[normalize-space()="Carga horária :"]]'
                     )
                     total_batidas = len(trs)
-                    #print(f'Total de batidas após lançamentos: {total_batidas}')
-                    
+
                     if total_batidas == 4:
-                            SmartsheetClient.update_smartsheet("Status", "Tratado", self.row_id, self.sheet_id, self.token)
-                            self.verificar_he = True
-                            
+                        self.verificar_he = True
+                        updates.append({"column": "Status", "value": "Tratado"})
+                        return updates
+
                     elif total_batidas == 2:
-                        if self.intervalo == None:
-                            SmartsheetClient.update_smartsheet("Status", "Tratado", self.row_id, self.sheet_id, self.token)
+                        if self.intervalo is None:
                             self.verificar_he = True
+                            updates.append({"column": "Status", "value": "Tratado"})
+                            return updates
                         else:
                             (
                                 data_entrada_int,
@@ -121,58 +114,39 @@ class InformarHorarioRealizadoTemp:
                                 data_saida_int,
                                 horario_saida_intervalo,
                             ) = SeleniumUtils.gerar_intervalo(self.data_registro, self.entrada, self.saida, self.intervalo)
-                            # print(
-                            #     "Horários de intervalo a serem lançados: "
-                            #     f"{data_entrada_int} {horario_entrada_intervalo} - "
-                            #     f"{data_saida_int} {horario_saida_intervalo}"
-                            # )
 
-                            lancamento_intervalo_1 =SeleniumUtils.lancar_horario_no_sistema(data_entrada_int, horario_entrada_intervalo, self.driver)
+                            lancamento_intervalo_1 = SeleniumUtils.lancar_horario_no_sistema(data_entrada_int, horario_entrada_intervalo, self.driver)
                             if lancamento_intervalo_1 == "Registro realizado com sucesso":
                                 lancamento_intervalo_2 = SeleniumUtils.lancar_horario_no_sistema(data_saida_int, horario_saida_intervalo, self.driver)
                                 if lancamento_intervalo_2 == "Registro realizado com sucesso":
-                                    SmartsheetClient.update_smartsheet("Status", "Tratado", self.row_id, self.sheet_id, self.token)
                                     self.verificar_he = True
-                                    
-                                else:
-                                    SmartsheetClient.update_smartsheet("Motivo Recusa", f"erro: {lancamento_intervalo_2}", self.row_id, self.sheet_id, self.token)
-                                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
+                                    updates.append({"column": "Status", "value": "Tratado"})
+                                    return updates
+
+                                updates.append({"column": "Status", "value": "Não Tratado"})
+                                updates.append({"column": "Motivo Recusa", "value": f"erro: {lancamento_intervalo_2}"})
                             else:
-                                SmartsheetClient.update_smartsheet("Motivo Recusa", f"erro: {lancamento_intervalo_1}", self.row_id, self.sheet_id, self.token)
-                                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
+                                updates.append({"column": "Status", "value": "Não Tratado"})
+                                updates.append({"column": "Motivo Recusa", "value": f"erro: {lancamento_intervalo_1}"})
                     else:
-                        SmartsheetClient.update_smartsheet("Motivo Recusa", "Erro no tratamento", self.row_id, self.sheet_id, self.token)
-                        SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
-                    
-                else:       
-                    SmartsheetClient.update_smartsheet("Motivo Recusa", f"erro: {lancamento_2}", self.row_id, self.sheet_id, self.token)
-                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
+                        updates.append({"column": "Status", "value": "Não Tratado"})
+                        updates.append({"column": "Motivo Recusa", "value": "Erro no tratamento"})
+
+                else:
+                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": f"erro: {lancamento_2}"})
             else:
-                SmartsheetClient.update_smartsheet("Motivo Recusa", f"erro: {lancamento_1}", self.row_id, self.sheet_id, self.token)
-
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": f"erro: {lancamento_1}"})
         except Exception as e:
-            print(f'erro: {e}')
-            time.sleep(200)
             try:
-                elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
-                SmartsheetClient.update_smartsheet("Motivo Recusa", 'Ponto fechado.', self.row_id, self.sheet_id,self.token)
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
-                return
-            except:
-                notify_colaborador_nao_encontrado = self.driver.find_element(By.XPATH, "//*[text()='Nenhum colaborador corresponde aos filtros de pesquisa selecionados']")
-                SmartsheetClient.update_smartsheet("Status", "Não tratado", self.row_id, self.sheet_id, self.token)
-                SmartsheetClient.update_smartsheet("Motivo Recusa", "CPF não encontrado", self.row_id, self.sheet_id, self.token)
+                self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": "Ponto fechado."})
+            except Exception:
+                self.driver.find_element(By.XPATH, "//*[text()='Nenhum colaborador corresponde aos filtros de pesquisa selecionados']")
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": "CPF não encontrado"})
 
-
-
-            
-                
-
-
-
-
-
-
-
+        return updates
 

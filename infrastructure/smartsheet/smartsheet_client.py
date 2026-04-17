@@ -46,4 +46,41 @@ class SmartsheetClient:
             # Verifica se a atualização foi bem-sucedida
             while response.message != 'SUCCESS':
                 response = smart.Sheets.update_rows(sheet_id, [updated_row])
-            
+
+    @staticmethod
+    def add_update(updates: list, column_title: str, cell_value):
+        updates.append({
+            "column": column_title,
+            "value": cell_value
+        })
+
+    @staticmethod
+    def update_bulk(all_updates, sheet_id):
+        smart = smartsheet.Smartsheet(SmartsheetClient.SMARTSHEET_TOKEN)
+        sheet = smart.Sheets.get_sheet(sheet_id)
+
+        # Mapeia nome da coluna -> column_id
+        column_map = {col.title: col.id for col in sheet.columns}
+
+        rows_to_update = []
+
+        for item in all_updates:
+            row = smartsheet.models.Row()
+            row.id = item["row_id"]
+
+            cells = []
+            for u in item["updates"]:
+                cell = smartsheet.models.Cell()
+                cell.column_id = column_map[u["column"]]
+                cell.value = u["value"]
+                cells.append(cell)
+
+            row.cells = cells
+            rows_to_update.append(row)
+
+        # Envia em lote
+        response = smart.Sheets.update_rows(sheet_id, rows_to_update)
+
+        while response.message != 'SUCCESS':
+            response = smart.Sheets.update_rows(sheet_id, rows_to_update)
+                

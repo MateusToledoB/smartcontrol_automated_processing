@@ -208,51 +208,44 @@ class SeleniumUtils():
         ).click()
 
     def search_cpf(driver, cpf, data_registro):
-        try:
-            elemento_ponto = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//*[normalize-space(text())='Ponto']"))
-            )
+        elemento_ponto = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//*[normalize-space(text())='Ponto']"))
+        )
 
-            driver.execute_script("arguments[0].click();", elemento_ponto)
-            
-            elemento_tratar = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "//*[normalize-space(text())='Tratar']"))
-            )
-
-            driver.execute_script("arguments[0].click();", elemento_tratar)
+        driver.execute_script("arguments[0].click();", elemento_ponto)
         
-            campo_data_inicial = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "//*[@id='data_inicial']"))
-            )
+        elemento_tratar = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//*[normalize-space(text())='Tratar']"))
+        )
 
-            campo_data_final = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "//*[@id='data_final']"))
-            )
+        driver.execute_script("arguments[0].click();", elemento_tratar)
+    
+        campo_data_inicial = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//*[@id='data_inicial']"))
+        )
 
-            driver.execute_script("arguments[0].value = arguments[1];", campo_data_inicial, data_registro)
-            driver.execute_script("arguments[0].value = arguments[1];", campo_data_final, data_registro)
+        campo_data_final = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//*[@id='data_final']"))
+        )
 
-            print('debug1')
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "//*[@id='_colaborador_tipo_filtro_Funcionario.Cpf']"))
-            ).click()
-            print('debug2')
+        driver.execute_script("arguments[0].value = arguments[1];", campo_data_inicial, data_registro)
+        driver.execute_script("arguments[0].value = arguments[1];", campo_data_final, data_registro)
 
-            cpf_input = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "//*[@id='_colaborador_filtro']"))
-            )
-            print('debug3')
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//*[@id='_colaborador_tipo_filtro_Funcionario.Cpf']"))
+        ).click()
 
-            cpf_input.send_keys(cpf)
+        cpf_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//*[@id='_colaborador_filtro']"))
+        )
 
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "//input[@value='Pesquisar']"))
-            ).click()
-            print('debug4')
+        cpf_input.send_keys(cpf)
 
-        except Exception as e:
-            print('erro', e)
-            time.sleep(200)
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "//input[@value='Pesquisar']"))
+        ).click()
+
+
       
     @staticmethod
     def verifica_lancamento(driver):

@@ -31,6 +31,8 @@ class FaltaAbonoTemp:
     }
 
     def adjust(self):
+        updates = []
+        
         try:
             SeleniumUtils.iframe_acess(self.driver, "/html/body/div[3]/div/div[1]/div/div/div[2]/div/iframe")
 
@@ -47,13 +49,14 @@ class FaltaAbonoTemp:
             
             if lancamento_registrado:
                 if lancamento_registrado == classificacao_fata:
-                    SmartsheetClient.update_smartsheet("Motivo Recusa", lancamento_registrado, self.row_id, self.sheet_id,self.token)
-                    SmartsheetClient.update_smartsheet("Status", "Tratado", self.row_id, self.sheet_id,self.token)
+                    updates.append({"column": "Status", "value": "Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": lancamento_registrado})
+                    return updates
                 else:
-                    SmartsheetClient.update_smartsheet("Motivo Recusa", "Lançamento Justificativa divergente", self.row_id, self.sheet_id,self.token)
-                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
+                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": "Lançamento Justificativa divergente"})
+                    return updates
                 fim = time.time()
-                return
             else:
                 pass
 
@@ -61,9 +64,9 @@ class FaltaAbonoTemp:
             horario_contratual_colaborador_str = horario_contratual_colaborador.get_attribute("innerText")
             #print(f"Horário contratual do colaborador: {horario_contratual_colaborador_str}")
             if horario_contratual_colaborador_str == "FOLGA":
-                SmartsheetClient.update_smartsheet("Motivo Recusa", "Dia de folga", self.row_id, self.sheet_id,self.token)
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
-                return
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": "Dia de folga"})
+                return updates
 
             trs = self.driver.find_elements(
                 By.XPATH,
@@ -73,9 +76,9 @@ class FaltaAbonoTemp:
 
             if classificacao_fata == "Hora Justificada Empresa":
                 if total_batidas  == 1:
-                    SmartsheetClient.update_smartsheet("Motivo Recusa", 'Batida impar', self.row_id, self.sheet_id,self.token)
-                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
-                    return
+                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": "Batida impar"})
+                    return updates
                 elif total_batidas  == 0:
                     time.sleep(1)
                     WebDriverWait(self.driver, 10).until(
@@ -90,28 +93,28 @@ class FaltaAbonoTemp:
                         EC.element_to_be_clickable((By.XPATH, "//*[@id='motivo_abonar']/following::*[@title='Salvar'][1]"))
                     ).click()
                     time.sleep(3)
-                    SmartsheetClient.update_smartsheet("Status", "Tratado", self.row_id, self.sheet_id,self.token)
-                    return
+                    updates.append({"column": "Status", "value": "Tratado"})
+                    return updates
                 elif total_batidas > 4:
-                    SmartsheetClient.update_smartsheet("Motivo Recusa", 'Mais de 4 batidas', self.row_id, self.sheet_id,self.token)
-                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
-                    return
+                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": "Mais de 4 batidas"})
+                    return updates
 
                 elemento_tempo_falta = self.driver.find_element(By.XPATH, "//font[@color='red']")
                 
                 texto_tempo_falta = elemento_tempo_falta.text.strip() 
                 #print(f'Tempo de falta: {texto_tempo_falta}')
                 if texto_tempo_falta == '':
-                    SmartsheetClient.update_smartsheet("Motivo Recusa", 'Sem tempo de falta gerado', self.row_id, self.sheet_id,self.token)
-                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
-                    return
+                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": "Sem tempo de falta gerado"})
+                    return updates
                 tempo_falta_obj = dt.datetime.strptime(texto_tempo_falta, "%H:%M").time()
                 tempo_limite = dt.time(3, 0)
 
                 if tempo_falta_obj > tempo_limite:
-                    SmartsheetClient.update_smartsheet("Motivo Recusa", 'Falta maior que 3H', self.row_id, self.sheet_id,self.token)
-                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
-                    return
+                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": "Falta maior que 3H"})
+                    return updates
                 elif total_batidas == 2:
                     time.sleep(1)
                     WebDriverWait(self.driver, 10).until(
@@ -126,14 +129,14 @@ class FaltaAbonoTemp:
                         EC.element_to_be_clickable((By.XPATH, "//*[@id='motivo_abonar']/following::*[@title='Salvar'][1]"))
                     ).click()
                     time.sleep(3)
-                    SmartsheetClient.update_smartsheet("Status", "Tratado", self.row_id, self.sheet_id,self.token)
-                    return
+                    updates.append({"column": "Status", "value": "Tratado"})
+                    return updates
             match total_batidas:
                 case 0 | 2 | 4:
                     if classificacao_fata == "Integração Cliente" and total_batidas > 0:
-                        SmartsheetClient.update_smartsheet("Motivo Recusa", 'Batida realizada em integração', self.row_id, self.sheet_id,self.token)
-                        SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
-                        return
+                        updates.append({"column": "Status", "value": "Não Tratado"})
+                        updates.append({"column": "Motivo Recusa", "value": "Batida realizada em integração"})
+                        return updates
                     if classificacao_fata in ["Suspensão", "Falta", "Atrasos", "Abandono"]:
                         try:
                             WebDriverWait(self.driver, 10).until(
@@ -158,34 +161,39 @@ class FaltaAbonoTemp:
                             EC.element_to_be_clickable((By.XPATH, f"//*[@id='motivo_abonar']//*[normalize-space(text())='{classificacao_fata}']"))
                         ).click()
                     except Exception as e:
-                        SmartsheetClient.update_smartsheet("Motivo Recusa", 'Não foi possivel lançar a justificativa', self.row_id, self.sheet_id,self.token)
-                        SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
-                        return
+                        updates.append({"column": "Status", "value": "Não Tratado"})
+                        updates.append({"column": "Motivo Recusa", "value": "Não foi possivel lançar a justificativa"})
+                        return updates
                     time.sleep(1)
                     WebDriverWait(self.driver, 10).until(
                         EC.element_to_be_clickable((By.XPATH, "//*[@id='motivo_abonar']/following::*[@title='Salvar'][1]"))
                     ).click()
                     time.sleep(3)
-                    SmartsheetClient.update_smartsheet("Status", "Tratado", self.row_id, self.sheet_id,self.token)
-
+                    updates.append({"column": "Status", "value": "Tratado"})
+                    return updates
                 case 1 | 3 | 5:
-                    SmartsheetClient.update_smartsheet("Motivo Recusa", 'Batida impar.', self.row_id, self.sheet_id,self.token)
-                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
+                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": "Batida impar."})
+                    return updates
 
                 case 6 | 7 | 8:
-                    SmartsheetClient.update_smartsheet("Motivo Recusa", 'Excesso de batidas', self.row_id, self.sheet_id,self.token)
-                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
+                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": "Excesso de batidas"})
+                    return updates
 
         except Exception as e:
                 try:
                     elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']")
-                    SmartsheetClient.update_smartsheet("Motivo Recusa", 'Ponto fechado.', self.row_id, self.sheet_id,self.token)
-                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
-                    return
+                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": "Ponto fechado."})
+                    return updates
                 except:
                     notify_colaborador_nao_encontrado = self.driver.find_element(By.XPATH, "//*[text()='Nenhum colaborador corresponde aos filtros de pesquisa selecionados']")
-                    SmartsheetClient.update_smartsheet("Status", "Não tratado", self.row_id, self.sheet_id, self.token)
-                    SmartsheetClient.update_smartsheet("Motivo Recusa", "CPF não encontrado", self.row_id, self.sheet_id, self.token)
+                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": "CPF não encontrado"})
+                    return updates
+
+                    
 
 
 

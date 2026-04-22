@@ -94,6 +94,8 @@ class SmartsheetDispatcher:
                                 service.adjust()
                                 
                
+        except Exception as e:
+            print(f'erro: {e}')
         finally:
             driver.quit()
 

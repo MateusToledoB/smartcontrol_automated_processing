@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta
-import time
+import datetime as dt
 
 from core.settings import settings
 from infrastructure.smartsheet.smartsheet_client import SmartsheetClient
 from services.temporarios.problema_no_equipamento.horario_contratual_previsto_temp import HorarioContratualPrevistoTemp
 from services.temporarios.problema_no_equipamento.informar_horario_realizado_temp import InformarHorarioRealizadoTemp
 from services.temporarios.problema_no_equipamento.falta_abono_temp import FaltaAbonoTemp
+from services.temporarios.apontamento_impar.apontamento_impar_temp import ApontamentoImparTemp
 
 from utils.driver_factory import DriverFactory
 from utils.selenium_utils import SeleniumUtils
@@ -53,10 +54,18 @@ class SmartsheetDispatcher:
                 if intervalo != None:
                     horas, minutos = map(int, intervalo.split(":"))
                     intervalo = timedelta(hours=horas, minutes=minutos)
+                #hora informada no smart
+                hora_informada = dados_celulas.get('Marcação/Entrada', None)
+                if hora_informada and hora_informada != "Preencher HC":
+                    hora_informada = dt.datetime.strptime(hora_informada, "%H:%M").time()
                 classificacao     = dados_celulas.get('Classificação da Falta', None)
+                motivo_alteracao  = dados_celulas.get('Motivo Alteração', None)
                 row_id            = linha.id
                 linha_numero      = linha.row_number
 
+                if str(motivo_alteracao).strip().lower() == '02.1 - apontamento ímpar':
+                    classificacao = '02.1 - apontamento ímpar'
+             
                 if status == None:
                     print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
                     
@@ -76,14 +85,14 @@ class SmartsheetDispatcher:
 
                         case "problema no equipamento - informar horário realizado":
                             service = InformarHorarioRealizadoTemp(
-                                driver = driver,
-                                row_id = row_id,
-                                sheet_id = sheet_id,
-                                token = token,
-                                data_registro = data_registro,
-                                entrada = entrada,
-                                saida = saida,
-                                intervalo = intervalo
+                                driver=driver,
+                                row_id=row_id,
+                                sheet_id=sheet_id,
+                                token=token,
+                                data_registro=data_registro,
+                                entrada=entrada,
+                                saida=saida,
+                                intervalo=intervalo
                             )
                             updates = service.adjust()
                             driver.refresh()
@@ -100,12 +109,26 @@ class SmartsheetDispatcher:
                             updates = service.adjust()
                             driver.refresh()
 
+                        case "02.1 - apontamento ímpar":
+                            service = ApontamentoImparTemp(
+                                driver=driver,
+                                row_id=row_id,
+                                sheet_id=sheet_id,
+                                token=token,
+                                data_registro=data_registro,
+                                hora_informada=hora_informada
+                            )
+                            updates = service.adjust()
+                            driver.refresh()
+
                     if updates:
-                        print(updates)
+                        # print(updates)
                         all_updates.append({
                             "row_id": row_id,
                             "updates": updates
                         })    
+        except Exception as e:
+            print(f'erro: {e}')
         finally:
             driver.quit()
             SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_TEMPORARIOS)

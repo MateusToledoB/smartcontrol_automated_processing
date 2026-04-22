@@ -83,4 +83,12 @@ class SmartsheetClient:
 
         while response.message != 'SUCCESS':
             response = smart.Sheets.update_rows(sheet_id, rows_to_update)
+
+    @staticmethod
+    def return_df_crs():
+        sheet_id = settings.SHEET_ID_EXCECOES_VALIDAS
+
+        
+
+
                 

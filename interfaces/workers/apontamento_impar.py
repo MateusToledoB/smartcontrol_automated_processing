@@ -33,10 +33,8 @@ def main():
         except Exception as e:
             print(f"[{datetime.now()}] Erro no ciclo: {e}")
 
-        elapsed = time.monotonic() - start
-        sleep_for = max(0, INTERVAL_SECONDS - elapsed)
-        print(f"[{datetime.now()}] Próximo ciclo em {sleep_for:.0f}s")
-        time.sleep(sleep_for)
+        print(f"[{datetime.now()}] Próximo ciclo em {INTERVAL_SECONDS}s")
+        time.sleep(INTERVAL_SECONDS)
 
 if __name__ == "__main__":
     main()

@@ -24,11 +24,12 @@ class InformarHorarioRealizado:
         self.intervalo = intervalo
 
     def adjust(self):
+        updates = []
         try:
             if self.entrada is None or self.saida is None:
-                SmartsheetClient.update_smartsheet("Motivo Recusa", "Sem entrada ou saida informadas", self.row_id, self.sheet_id, self.token)
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token) 
-                
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": "Sem entrada ou saida informadas"})
+                return updates
             
             self.driver.switch_to.default_content()
 
@@ -76,14 +77,14 @@ class InformarHorarioRealizado:
             #print(f'Horário contratual colaborador: {horario_contratual_colaborador_str}')
 
             if "0824" in horario_contratual_colaborador_str:
-                SmartsheetClient.update_smartsheet("Motivo Recusa", 'Horista', self.row_id, self.sheet_id, self.token)
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
-                return
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": "Horista"})
+                return updates
 
             elif horario_contratual_colaborador_str == "FOLGA":
-                SmartsheetClient.update_smartsheet("Motivo Recusa", 'Dia de folga', self.row_id, self.sheet_id, self.token)
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
-                return
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": "Dia de folga"})
+                return updates
             else:
                 horas = re.findall(r'(?<!CH\s)(\d{2}):(\d{2})', horario_contratual_colaborador_str)
                 entrada_horario_contratual_time, saida_horario_contratual_time = SeleniumUtils.retorna_entrada_e_saida_HC(horas)
@@ -106,9 +107,9 @@ class InformarHorarioRealizado:
             #print(f'total trs: {len(trs)}')
             
             if len(trs) > 0:
-                SmartsheetClient.update_smartsheet("Motivo Recusa", 'Colaborador com batidas eletronicas', self.row_id, self.sheet_id, self.token)
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
-                return
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": "Colaborador com batidas eletronicas"})
+                return updates
                 
 
             saida_maior_que_hc_2h = SeleniumUtils.saida_maior_que_hc_em_2h(saida_horario_contratual_time, self.saida)
@@ -140,12 +141,12 @@ class InformarHorarioRealizado:
                     #print(f'Total de batidas após lançamentos: {total_batidas}')
                     
                     if total_batidas == 4:
-                            SmartsheetClient.update_smartsheet("Status", "Tratado", self.row_id, self.sheet_id, self.token)
+                            updates.append({"column": "Status", "value": "Tratado"})
                             self.verificar_he = True
                             
                     elif total_batidas == 2:
                         if self.intervalo == None:
-                            SmartsheetClient.update_smartsheet("Status", "Tratado", self.row_id, self.sheet_id, self.token)
+                            updates.append({"column": "Status", "value": "Tratado"})
                             self.verificar_he = True
                         else:
                             (
@@ -164,26 +165,30 @@ class InformarHorarioRealizado:
                             if lancamento_intervalo_1 == "Registro realizado com sucesso":
                                 lancamento_intervalo_2 = SeleniumUtils.lancar_horario_no_sistema(data_saida_int, horario_saida_intervalo, self.driver)
                                 if lancamento_intervalo_2 == "Registro realizado com sucesso":
-                                    SmartsheetClient.update_smartsheet("Status", "Tratado", self.row_id, self.sheet_id, self.token)
+                                    updates.append({"column": "Status", "value": "Tratado"})
                                     self.verificar_he = True
                                     
                                 else:
-                                    SmartsheetClient.update_smartsheet("Motivo Recusa", f"erro: {lancamento_intervalo_2}", self.row_id, self.sheet_id, self.token)
-                                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
+                                    updates.append({"column": "Status", "value": "Não Tratado"})
+                                    updates.append({"column": "Motivo Recusa", "value": f"erro: {lancamento_intervalo_2}"})
+                                    return updates
                             else:
-                                SmartsheetClient.update_smartsheet("Motivo Recusa", f"erro: {lancamento_intervalo_1}", self.row_id, self.sheet_id, self.token)
-                                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
+                                updates.append({"column": "Status", "value": "Não Tratado"})
+                                updates.append({"column": "Motivo Recusa", "value": f"erro: {lancamento_intervalo_1}"})
+                                return updates
                     else:
-                        SmartsheetClient.update_smartsheet("Motivo Recusa", "Erro no tratamento", self.row_id, self.sheet_id, self.token)
-                        SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
+                        updates.append({"column": "Status", "value": "Não Tratado"})
+                        updates.append({"column": "Motivo Recusa", "value": "Erro no tratamento"})
+                        return updates
                     
                 else:       
-                    SmartsheetClient.update_smartsheet("Motivo Recusa", f"erro: {lancamento_2}", self.row_id, self.sheet_id, self.token)
-                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
+                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": f"erro: {lancamento_2}"})
+                    return updates
             else:
-                SmartsheetClient.update_smartsheet("Motivo Recusa", f"erro: {lancamento_1}", self.row_id, self.sheet_id, self.token)
-
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": f"erro: {lancamento_1}"})
+                return updates
 
             if self.verificar_he:
                 try:
@@ -198,7 +203,7 @@ class InformarHorarioRealizado:
                             EC.visibility_of_element_located((By.XPATH, f"//tr[.//*[normalize-space(text())='{self.data_registro}']]//*[contains(@style,'color: red')]"))
                         )
                     except:
-                        return
+                        return updates
 
                     WebDriverWait(self.driver, 5).until(
                         EC.element_to_be_clickable((By.XPATH, "//*[@id='hora_extra_button']"))
@@ -256,31 +261,26 @@ class InformarHorarioRealizado:
                     notify = notify.get_attribute("innerText")
                     # #print(f'Notificação hora extra: {notify}')
                     if notify == "Registros salvos com sucesso":
-                        SmartsheetClient.update_smartsheet('Motivo Recusa',f"HE classificada", self.row_id, self.sheet_id, self.token)
+                        updates.append({"column": "Motivo Recusa", "value": "HE classificada"})
                     else:
-                        SmartsheetClient.update_smartsheet('Motivo Recusa',f"{notify}", self.row_id, self.sheet_id, self.token)
+                        updates.append({"column": "Motivo Recusa", "value": f"{notify}"})
                 except Exception as e:
                     #print('erro ao classificar he')
                     #print(e)
-                    SmartsheetClient.update_smartsheet('Motivo Recusa',f"Erro ao tentar classificar HE", self.row_id, self.sheet_id, self.token)
+                    updates.append({"column": "Motivo Recusa", "value": "Erro ao tentar classificar HE"})
+                    return updates
         except Exception as e:
             try:
                 elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
-                SmartsheetClient.update_smartsheet("Motivo Recusa", 'Ponto fechado.', self.row_id, self.sheet_id, self.token)
-                SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": "Ponto fechado."})
+                return updates
             except:
                 lancamento_registrado = SeleniumUtils.verifica_lancamento(self.driver)
                 if lancamento_registrado is not None:
-                    SmartsheetClient.update_smartsheet("Motivo Recusa", lancamento_registrado, self.row_id, self.sheet_id, self.token)
-                    SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id, self.token)
-               
-            
-                
+                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": lancamento_registrado})
+                    return updates
 
-
-
-
-
-
-
+        return updates
 

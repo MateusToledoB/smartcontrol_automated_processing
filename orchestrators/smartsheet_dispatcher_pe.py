@@ -15,6 +15,8 @@ class SmartsheetDispatcher:
         sheet, _, token, sheet_id, _ = SmartsheetClient.setup_smartsheet(settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO)
         nome_coluna_para_indice = {coluna.title: index for index, coluna in enumerate(sheet.columns)}
 
+        df_cr = SmartsheetClient.return_df_crs()
+
         if worker_id < 1 or worker_id > total_workers:
             raise ValueError(f"worker_id deve estar entre 1 e {total_workers}")
 
@@ -27,6 +29,7 @@ class SmartsheetDispatcher:
         bloco_linhas = sheet.rows[start:end]
 
         driver = DriverFactory.create_edge_driver()
+        all_updates = []
         try:
             for linha in bloco_linhas:
           
@@ -50,12 +53,18 @@ class SmartsheetDispatcher:
                     horas, minutos = map(int, intervalo.split(":"))
                     intervalo = timedelta(hours=horas, minutes=minutos)
                 classificacao     = dados_celulas.get('Classificação da Falta', None)
+                cr                = dados_celulas.get('CR', None)
+                cr_number         = cr_number = str(cr[:5]).zfill(5)
+                observacao        = dados_celulas.get('Observação', None)
+                observacao        = "Sem justificativa" if observacao is None else observacao
                 row_id            = linha.id
                 linha_numero      = linha.row_number
 
-                print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
-                
                 if status == None:  
+                        
+                        print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
+
+                        updates = []
                         driver.get(link1_ponto)
                         match str(classificacao).strip().lower():
                             
@@ -67,7 +76,7 @@ class SmartsheetDispatcher:
                                     token=token,
                                     data_registro=data_registro,
                                 )
-                                service.adjust()
+                                updates = service.adjust()
 
                             case "problema no equipamento - informar horário realizado":
                                 service = InformarHorarioRealizado(
@@ -80,7 +89,7 @@ class SmartsheetDispatcher:
                                     saida=saida,
                                     intervalo=intervalo,
                                 )
-                                service.adjust()
+                                updates = service.adjust()
 
                             case "abandono" | "atraso" | "falta" | "suspensão" | "integração cliente" | "reciclagem" | "liberado pelo cliente":
                                 service = FaltaAbono(
@@ -88,16 +97,27 @@ class SmartsheetDispatcher:
                                     row_id=row_id,
                                     sheet_id=sheet_id,
                                     token=token,
-                                    data_registro = data_registro,
-                                    classificacao_falta_lancado = classificacao
+                                    data_registro=data_registro,
+                                    classificacao_falta_lancado=classificacao,
+                                    cr_number=cr_number,
+                                    df_cr=df_cr,
+                                    observacao=observacao
+
                                 )
-                                service.adjust()
+                                updates = service.adjust()
+
+                        if updates:
+                            all_updates.append({
+                                "row_id": row_id,
+                                "updates": updates
+                            })
                                 
-               
         except Exception as e:
             print(f'erro: {e}')
         finally:
             driver.quit()
+            if all_updates:
+                SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO)
 
 if __name__ == "__main__":
     import sys

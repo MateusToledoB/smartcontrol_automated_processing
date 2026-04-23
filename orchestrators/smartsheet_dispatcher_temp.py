@@ -122,17 +122,17 @@ class SmartsheetDispatcher:
                             driver.refresh()
 
                     if updates:
-                        # print(updates)
                         all_updates.append({
                             "row_id": row_id,
                             "updates": updates
                         })    
+                        
         except Exception as e:
             print(f'erro: {e}')
         finally:
             driver.quit()
-            SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_TEMPORARIOS)
-            
+            if all_updates:
+                SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_TEMPORARIOS)          
 
 if __name__ == "__main__":
     import sys

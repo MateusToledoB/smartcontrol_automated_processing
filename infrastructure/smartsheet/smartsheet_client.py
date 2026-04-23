@@ -1,5 +1,5 @@
 import smartsheet
-
+import pandas as pd
 from core.settings import settings
 
 class SmartsheetClient:
@@ -88,7 +88,56 @@ class SmartsheetClient:
     def return_df_crs():
         sheet_id = settings.SHEET_ID_EXCECOES_VALIDAS
 
-        
+        # Inicializa cliente
+        smartsheet_client = smartsheet.Smartsheet(settings.SMARTSHEET_TOKEN)
+
+        # Puxa a planilha
+        sheet = smartsheet_client.Sheets.get_sheet(sheet_id)
+
+        # Mapeia columnId -> nome da coluna
+        columns_map = {col.id: col.title for col in sheet.columns}
+
+        data = []
+
+        # Itera pelas linhas
+        for row in sheet.rows:
+            row_data = {}
+
+            for cell in row.cells:
+                col_name = columns_map.get(cell.column_id)
+                value = cell.value if cell.value is not None else cell.display_value
+                row_data[col_name] = value
+
+            data.append(row_data)
+
+        # Cria DataFrame
+        df = pd.DataFrame(data)
+
+        return df
+
+    def return_validation_cr(df: pd.DataFrame, valor_referencia: str, tipo: str):
+        """
+        df: DataFrame
+        valor_referencia: valor que será buscado na coluna 'CR'
+        tipo: 'hora' ou 'dia'
+        """
+
+        # Filtra a linha pelo CR
+        linha = df[df['CR'].astype(str).str.contains(valor_referencia, na=False)]
+
+        if linha.empty:
+            return 'NÃO'
+
+        linha = linha.iloc[0]  # pega a primeira ocorrência
+
+        if tipo.lower() == "hora":
+            return linha.get("Hora Justificada Empresa")
+        elif tipo.lower() == "dia":
+            return linha.get("Dia Justificado Empresa")
+        else:
+            raise ValueError("Tipo deve ser 'hora' ou 'dia'")
+
+
 
 
                 

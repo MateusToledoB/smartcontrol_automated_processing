@@ -67,6 +67,7 @@ class SmartsheetDispatcher:
                     classificacao = '02.1 - apontamento ímpar'
              
                 if status == None:
+                    
                     print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
                     
                     SeleniumUtils.search_cpf(driver, cpf, data_registro)
@@ -126,7 +127,7 @@ class SmartsheetDispatcher:
                             "row_id": row_id,
                             "updates": updates
                         })    
-                        
+
         except Exception as e:
             print(f'erro: {e}')
         finally:

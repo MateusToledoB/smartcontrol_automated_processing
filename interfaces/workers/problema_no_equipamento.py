@@ -31,9 +31,9 @@ def main():
         try:
             run_once()
         except Exception as e:
-            print(f"[{datetime.now()}] Erro no ciclo: {e}")
+            print(f"[{datetime.now()}] Erro no ciclo 4.1: {e}")
 
-        print(f"[{datetime.now()}] Próximo ciclo em {INTERVAL_SECONDS}s")
+        print(f"[{datetime.now()}] Próximo ciclo 4.1 em {INTERVAL_SECONDS}s")
         time.sleep(INTERVAL_SECONDS)
 
 if __name__ == "__main__":

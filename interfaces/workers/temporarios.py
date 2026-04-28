@@ -31,9 +31,9 @@ def main():
         try:
             run_once()
         except Exception as e:
-            print(f"[{datetime.now()}] Erro no ciclo: {e}")
+            print(f"[{datetime.now()}] Erro no ciclo temporarios: {e}")
 
-        print(f"[{datetime.now()}] Próximo ciclo em {INTERVAL_SECONDS}s")
+        print(f"[{datetime.now()}] Próximo ciclo temporarios em {INTERVAL_SECONDS}s")
         time.sleep(INTERVAL_SECONDS)
 
 if __name__ == "__main__":

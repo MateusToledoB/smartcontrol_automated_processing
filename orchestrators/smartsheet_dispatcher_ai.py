@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta
-import time
+﻿from datetime import datetime, timedelta
 import datetime as dt
 
 from core.settings import settings
@@ -7,6 +6,7 @@ from infrastructure.smartsheet.smartsheet_client import SmartsheetClient
 from services.apontamento_impar.apontamento_impar import ApontamentoImpar
 
 from utils.driver_factory import DriverFactory
+
 
 class SmartsheetDispatcher:
     @staticmethod
@@ -17,70 +17,81 @@ class SmartsheetDispatcher:
         if worker_id < 1 or worker_id > total_workers:
             raise ValueError(f"worker_id deve estar entre 1 e {total_workers}")
 
-        total         = len(sheet.rows)
-        base, resto   = divmod(total, total_workers)
+        total = len(sheet.rows)
+        base, resto = divmod(total, total_workers)
         indice_worker = worker_id - 1
-        start         = indice_worker * base + min(indice_worker, resto)
-        end           = start + base + (1 if indice_worker < resto else 0)
+        start = indice_worker * base + min(indice_worker, resto)
+        end = start + base + (1 if indice_worker < resto else 0)
 
         bloco_linhas = sheet.rows[start:end]
 
         driver = DriverFactory.create_edge_driver()
+        all_updates = []
         try:
             for linha in bloco_linhas:
-          
-                dados_celulas = {coluna.title: linha.cells[nome_coluna_para_indice[coluna.title]].value
-                                    for coluna in sheet.columns
-                                    if coluna.title in nome_coluna_para_indice}
+                dados_celulas = {
+                    coluna.title: linha.cells[nome_coluna_para_indice[coluna.title]].value
+                    for coluna in sheet.columns
+                    if coluna.title in nome_coluna_para_indice
+                }
 
                 data_registro_str = dados_celulas.get('Data_do_Registro', None)
                 data_registro_EUA = datetime.strptime(data_registro_str, "%Y-%m-%d")
-                data_registro     = data_registro_EUA.strftime("%d/%m/%Y")
-                link1_ponto       = dados_celulas.get('Link1', None)
-                status            = dados_celulas.get('Status', None)
-                motivo_recusa     = dados_celulas.get('Motivo Recusa', None)
-                colaborador       = dados_celulas.get('Colaborador', None)
-                entrada           = dados_celulas.get('Marcação/Entrada', None)
-                saida             = dados_celulas.get('Horário de Saída', None)
-                intervalo         = dados_celulas.get('Tempo de Intervalo', None)
-                cpf               = colaborador.split("-")[0].strip() if colaborador and "-" in colaborador else None
-                cpf               = str(cpf).zfill(11) if cpf is not None else None
-                if intervalo != None:
+                data_registro = data_registro_EUA.strftime("%d/%m/%Y")
+                link1_ponto = dados_celulas.get('Link1', None)
+                status = dados_celulas.get('Status', None)
+                motivo_recusa = dados_celulas.get('Motivo Recusa', None)
+                colaborador = dados_celulas.get('Colaborador', None)
+                entrada = dados_celulas.get('MarcaÃ§Ã£o/Entrada', None)
+                saida = dados_celulas.get('HorÃ¡rio de SaÃ­da', None)
+                intervalo = dados_celulas.get('Tempo de Intervalo', None)
+                cpf = colaborador.split("-")[0].strip() if colaborador and "-" in colaborador else None
+                cpf = str(cpf).zfill(11) if cpf is not None else None
+                if intervalo is not None:
                     horas, minutos = map(int, intervalo.split(":"))
                     intervalo = timedelta(hours=horas, minutes=minutos)
-                #hora informada no smart
-                hora_informada = dados_celulas.get('Marcação/Entrada', None)
+
+                hora_informada = dados_celulas.get('MarcaÃ§Ã£o/Entrada', None)
                 if hora_informada and hora_informada != "Preencher HC":
                     hora_informada = dt.datetime.strptime(hora_informada, "%H:%M").time()
-                classificacao     = dados_celulas.get('Classificação da Falta', None)
-                motivo_alteracao  = dados_celulas.get('Motivo Alteração', None)
-                row_id            = linha.id
-                linha_numero      = linha.row_number
 
-                if status == None:  
+                classificacao = dados_celulas.get('ClassificaÃ§Ã£o da Falta', None)
+                motivo_alteracao = dados_celulas.get('Motivo AlteraÃ§Ã£o', None)
+                row_id = linha.id
+                linha_numero = linha.row_number
 
-                        print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
+                if status is None:
+                    print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} ClassificaÃ§Ã£o: {classificacao}")
 
-                        driver.get(link1_ponto)
-                        match str(motivo_alteracao).strip().lower():
-                            
-                            case "02.1 - apontamento ímpar":
-                                service = ApontamentoImpar(
-                                    driver=driver,
-                                    row_id=row_id,
-                                    sheet_id=sheet_id,
-                                    token=token,
-                                    data_registro=data_registro,
-                                    hora_informada=hora_informada
-                                )
-                                service.adjust()
-       
-               
+                    updates = []
+                    driver.get(link1_ponto)
+                    match str(motivo_alteracao).strip().lower():
+                        case "02.1 - apontamento Ã­mpar":
+                            service = ApontamentoImpar(
+                                driver=driver,
+                                row_id=row_id,
+                                sheet_id=sheet_id,
+                                token=token,
+                                data_registro=data_registro,
+                                hora_informada=hora_informada
+                            )
+                            updates = service.adjust()
+
+                    if updates:
+                        all_updates.append({
+                            "row_id": row_id,
+                            "updates": updates
+                        })
+
         except Exception as e:
             print(f'erro: {e}')
         finally:
             driver.quit()
+            if all_updates:
+                SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_APONTAMENTO_IMPAR)
+
 
 if __name__ == "__main__":
     import sys
     SmartsheetDispatcher.main(int(sys.argv[1]))
+

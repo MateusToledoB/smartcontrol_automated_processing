@@ -37,36 +37,37 @@ class SmartsheetDispatcher:
 
                 data_registro_str = dados_celulas.get('Data_do_Registro', None)
                 data_registro_EUA = datetime.strptime(data_registro_str, "%Y-%m-%d")
-                data_registro = data_registro_EUA.strftime("%d/%m/%Y")
-                link1_ponto = dados_celulas.get('Link1', None)
-                status = dados_celulas.get('Status', None)
-                motivo_recusa = dados_celulas.get('Motivo Recusa', None)
-                colaborador = dados_celulas.get('Colaborador', None)
-                entrada = dados_celulas.get('MarcaÃ§Ã£o/Entrada', None)
-                saida = dados_celulas.get('HorÃ¡rio de SaÃ­da', None)
-                intervalo = dados_celulas.get('Tempo de Intervalo', None)
-                cpf = colaborador.split("-")[0].strip() if colaborador and "-" in colaborador else None
-                cpf = str(cpf).zfill(11) if cpf is not None else None
+                data_registro     = data_registro_EUA.strftime("%d/%m/%Y")
+                link1_ponto       = dados_celulas.get('Link1', None)
+                status            = dados_celulas.get('Status', None)
+                motivo_recusa     = dados_celulas.get('Motivo Recusa', None)
+                colaborador       = dados_celulas.get('Colaborador', None)
+                entrada           = dados_celulas.get('Marcação/Entrada', None)
+                saida             = dados_celulas.get('Horário de Saída', None)
+                intervalo         = dados_celulas.get('Tempo de Intervalo', None)
+                cpf               = colaborador.split("-")[0].strip() if colaborador and "-" in colaborador else None
+                cpf               = str(cpf).zfill(11) if cpf is not None else None
+
                 if intervalo is not None:
                     horas, minutos = map(int, intervalo.split(":"))
                     intervalo = timedelta(hours=horas, minutes=minutos)
 
-                hora_informada = dados_celulas.get('MarcaÃ§Ã£o/Entrada', None)
+                hora_informada = dados_celulas.get('Marcação/Entrada', None)
                 if hora_informada and hora_informada != "Preencher HC":
                     hora_informada = dt.datetime.strptime(hora_informada, "%H:%M").time()
 
-                classificacao = dados_celulas.get('ClassificaÃ§Ã£o da Falta', None)
-                motivo_alteracao = dados_celulas.get('Motivo AlteraÃ§Ã£o', None)
-                row_id = linha.id
-                linha_numero = linha.row_number
+                classificacao    = dados_celulas.get('Classificação da Falta', None)
+                motivo_alteracao = dados_celulas.get('Motivo Alteração', None)
+                row_id           = linha.id
+                linha_numero     = linha.row_number
 
                 if status is None:
-                    print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} ClassificaÃ§Ã£o: {classificacao}")
+                    print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
 
                     updates = []
                     driver.get(link1_ponto)
                     match str(motivo_alteracao).strip().lower():
-                        case "02.1 - apontamento Ã­mpar":
+                        case "02.1 - apontamento ímpar":
                             service = ApontamentoImpar(
                                 driver=driver,
                                 row_id=row_id,

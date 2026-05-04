@@ -60,11 +60,9 @@ class SmartsheetDispatcher:
                 row_id            = linha.id
                 linha_numero      = linha.row_number
 
-                if status == None:  
-                        
+                if status == None:
                         print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
 
-                        updates = []
                         driver.get(link1_ponto)
                         match str(classificacao).strip().lower():
                             

@@ -64,7 +64,6 @@ class SmartsheetDispatcher:
                 if status is None:
                     print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
 
-                    updates = []
                     driver.get(link1_ponto)
                     match str(motivo_alteracao).strip().lower():
                         case "02.1 - apontamento ímpar":

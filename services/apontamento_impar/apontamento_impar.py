@@ -183,8 +183,12 @@ class ApontamentoImpar:
                             notify = WebDriverWait(self.driver, 50).until(
                                 EC.presence_of_element_located((By.XPATH, '//*[@id="top_pad_div"]/div/div/div[1]/span'))
                             )
-                            notify = notify.get_attribute("innerText")
-                            
+
+                            notify = str(notify.get_attribute("innerText"))
+
+                            if notify == None or notify == "":
+                                notify = "erro"
+
                             match notify:
                                 case "Registro realizado com sucesso":
                                     updates.append({"column": "Status", "value": "Tratado"})
@@ -280,7 +284,7 @@ class ApontamentoImpar:
                                     updates.append({"column": "Status", "value": "Não tratado"})
                                 
                                 case _:
-                                    updates.append({"column": "Motivo Recusa", "value": {notify}})
+                                    updates.append({"column": "Motivo Recusa", "value": notify})
                                     updates.append({"column": "Status", "value": "Não tratado"})
 
 

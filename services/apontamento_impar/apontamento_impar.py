@@ -59,6 +59,12 @@ class ApontamentoImpar:
             )
             time.sleep(2)
 
+            lancamento_registrado = SeleniumUtils.verifica_lancamento(self.driver)
+            
+            if lancamento_registrado:
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": lancamento_registrado})
+
             horario_contratual_colaborador = self.driver.find_element(By.XPATH, '//*[@selected="selected"]')
             horario_contratual_colaborador_str = horario_contratual_colaborador.get_attribute("innerText")
             if horario_contratual_colaborador_str != "FOLGA":
@@ -178,7 +184,7 @@ class ApontamentoImpar:
                                 EC.presence_of_element_located((By.XPATH, '//*[@id="top_pad_div"]/div/div/div[1]/span'))
                             )
                             notify = notify.get_attribute("innerText")
-
+                            
                             match notify:
                                 case "Registro realizado com sucesso":
                                     updates.append({"column": "Status", "value": "Tratado"})
@@ -268,6 +274,15 @@ class ApontamentoImpar:
                                 case "HorÃƒÂ¡rio de registro jÃƒÂ¡ realizado":
                                     updates.append({"column": "Motivo Recusa", "value": "Horário de registro já realizado"})
                                     updates.append({"column": "Status", "value": "Não tratado"})
+                                
+                                case "HorÃ¡rio de registro jÃ¡ realizado":
+                                    updates.append({"column": "Motivo Recusa", "value": "Horário de registro já realizado"})
+                                    updates.append({"column": "Status", "value": "Não tratado"})
+                                
+                                case _:
+                                    updates.append({"column": "Motivo Recusa", "value": {notify}})
+                                    updates.append({"column": "Status", "value": "Não tratado"})
+
 
                 case 0:
                     updates.append({"column": "Motivo Recusa", "value": "0 batidas encontradas"})

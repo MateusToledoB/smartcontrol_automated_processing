@@ -81,8 +81,10 @@ class SmartsheetClient:
         # Envia em lote
         response = smart.Sheets.update_rows(sheet_id, rows_to_update)
 
-        while response.message != 'SUCCESS':
+        if response.message != 'SUCCESS':
             response = smart.Sheets.update_rows(sheet_id, rows_to_update)
+            if response.message != 'SUCCESS':
+                print("Erro ao atualizar em lote:", response.message)
 
     @staticmethod
     def return_df_crs():

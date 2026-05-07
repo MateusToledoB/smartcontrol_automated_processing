@@ -6,6 +6,7 @@ from infrastructure.smartsheet.smartsheet_client import SmartsheetClient
 from services.problema_no_equipamento.horario_contratual_previsto import HorarioContratualPrevisto
 from services.problema_no_equipamento.informar_horario_realizado import InformarHorarioRealizado
 from services.problema_no_equipamento.falta_abono import FaltaAbono
+from services.problema_no_equipamento.falta_com_desconto_bh import FaltaDescontoBH
 
 from utils.driver_factory import DriverFactory
 
@@ -49,6 +50,7 @@ class SmartsheetDispatcher:
                 intervalo         = dados_celulas.get('Tempo de Intervalo', None)
                 cpf               = colaborador.split("-")[0].strip() if colaborador and "-" in colaborador else None
                 cpf               = str(cpf).zfill(11) if cpf is not None else None
+                motivo_alteracao  = dados_celulas.get('Motivo Alteração', None)
                 if intervalo != None:
                     horas, minutos = map(int, intervalo.split(":"))
                     intervalo = timedelta(hours=horas, minutes=minutos)
@@ -90,19 +92,35 @@ class SmartsheetDispatcher:
                                 updates = service.adjust()
 
                             case "abandono" | "atraso" | "falta" | "suspensão" | "integração cliente" | "reciclagem" | "liberado pelo cliente":
-                                service = FaltaAbono(
-                                    driver=driver,
-                                    row_id=row_id,
-                                    sheet_id=sheet_id,
-                                    token=token,
-                                    data_registro=data_registro,
-                                    classificacao_falta_lancado=classificacao,
-                                    cr_number=cr_number,
-                                    df_cr=df_cr,
-                                    observacao=observacao
+                                if motivo_alteracao.strip().lower() == '04.1 - faltas sem justificativa': 
+                                    service = FaltaAbono(
+                                        driver=driver,
+                                        row_id=row_id,
+                                        sheet_id=sheet_id,
+                                        token=token,
+                                        data_registro=data_registro,
+                                        classificacao_falta_lancado=classificacao,
+                                        cr_number=cr_number,
+                                        df_cr=df_cr,
+                                        observacao=observacao
 
-                                )
-                                updates = service.adjust()
+                                    )
+                                    updates = service.adjust()
+                                
+                                elif motivo_alteracao.strip().lower() == '09.1 - b.h. negativo':
+                                    service = FaltaDescontoBH(
+                                        driver=driver,
+                                        row_id=row_id,
+                                        sheet_id=sheet_id,
+                                        token=token,
+                                        data_registro=data_registro,
+                                        classificacao_falta_lancado=classificacao,
+                                        cr_number=cr_number,
+                                        df_cr=df_cr,
+                                        observacao=observacao
+
+                                    )
+                                    updates = service.adjust()
 
                         if updates:
                             all_updates.append({

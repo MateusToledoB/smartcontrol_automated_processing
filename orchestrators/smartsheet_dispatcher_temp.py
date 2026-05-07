@@ -7,6 +7,7 @@ from services.temporarios.problema_no_equipamento.horario_contratual_previsto_te
 from services.temporarios.problema_no_equipamento.informar_horario_realizado_temp import InformarHorarioRealizadoTemp
 from services.temporarios.problema_no_equipamento.falta_abono_temp import FaltaAbonoTemp
 from services.temporarios.apontamento_impar.apontamento_impar_temp import ApontamentoImparTemp
+from services.temporarios.problema_no_equipamento.falta_com_desconto_bh_temp import FaltaDescontoBHTemp
 
 from utils.driver_factory import DriverFactory
 from utils.selenium_utils import SeleniumUtils
@@ -65,7 +66,7 @@ class SmartsheetDispatcher:
 
                 if str(motivo_alteracao).strip().lower() == '02.1 - apontamento ímpar':
                     classificacao = '02.1 - apontamento ímpar'
-             
+        
                 if status == None:
                     
                     print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
@@ -99,16 +100,30 @@ class SmartsheetDispatcher:
                             driver.refresh()
 
                         case "abandono" | "atraso" | "falta" | "suspensão" | "integração cliente" | "reciclagem" | "liberado pelo cliente":
-                            service = FaltaAbonoTemp(
-                                driver=driver,
-                                row_id=row_id,
-                                sheet_id=sheet_id,
-                                token=token,
-                                data_registro = data_registro,
-                                classificacao_falta_lancado = classificacao
-                            )
-                            updates = service.adjust()
-                            driver.refresh()
+                            
+                            if motivo_alteracao.strip().lower() == '04.1 - faltas sem justificativa':     
+                                service = FaltaAbonoTemp(
+                                    driver=driver,
+                                    row_id=row_id,
+                                    sheet_id=sheet_id,
+                                    token=token,
+                                    data_registro = data_registro,
+                                    classificacao_falta_lancado = classificacao
+                                )
+                                updates = service.adjust()
+                                driver.refresh()
+                            
+                            elif motivo_alteracao.strip().lower() == '09.1 - b.h. negativo':
+                                service = FaltaDescontoBHTemp(
+                                    driver=driver,
+                                    row_id=row_id,
+                                    sheet_id=sheet_id,
+                                    token=token,
+                                    data_registro=data_registro,
+                                    classificacao_falta_lancado=classificacao
+                                )
+                                updates = service.adjust()
+                                driver.refresh()
 
                         case "02.1 - apontamento ímpar":
                             service = ApontamentoImparTemp(

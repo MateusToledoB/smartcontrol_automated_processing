@@ -65,18 +65,46 @@ class SmartsheetClient:
         rows_to_update = []
 
         for item in all_updates:
+            if "row_id" not in item:
+                print("[update_bulk] Item ignorado: row_id ausente.")
+                continue
+
+            updates = item.get("updates", [])
+            if not updates:
+                continue
+
+            # Blindagem: garante apenas 1 valor por coluna na mesma linha.
+            # Se houver duplicidade, mantemos o ultimo valor recebido.
+            dedup_updates = {}
+            for update in updates:
+                column_name = update.get("column")
+                if column_name is None:
+                    print(f"[update_bulk] Linha {item['row_id']}: update ignorado por coluna ausente.")
+                    continue
+                if column_name not in column_map:
+                    print(f"[update_bulk] Linha {item['row_id']}: coluna '{column_name}' nao existe na planilha. Update ignorado.")
+                    continue
+                dedup_updates[column_name] = update.get("value")
+
+            if not dedup_updates:
+                continue
+
             row = smartsheet.models.Row()
             row.id = item["row_id"]
 
             cells = []
-            for u in item["updates"]:
+            for column_name, value in dedup_updates.items():
                 cell = smartsheet.models.Cell()
-                cell.column_id = column_map[u["column"]]
-                cell.value = u["value"]
+                cell.column_id = column_map[column_name]
+                cell.value = value
                 cells.append(cell)
 
             row.cells = cells
             rows_to_update.append(row)
+
+        if not rows_to_update:
+            print("[update_bulk] Nenhuma linha valida para atualizar em lote.")
+            return
 
         # Envia em lote
         response = smart.Sheets.update_rows(sheet_id, rows_to_update)

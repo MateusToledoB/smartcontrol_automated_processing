@@ -75,7 +75,7 @@ class HorarioContratualPrevisto:
                     return updates
                 case _:
                     updates.append({"column": "Status", "value": "Não Tratado"})
-                    updates.append({"column": "Motivo Recusa", "value": texto_notify})
+                    updates.append({"column": "Motivo Recusa", "value": f"Erro ao lançar: {texto_notify}"})
                     return updates
         except:
             elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")

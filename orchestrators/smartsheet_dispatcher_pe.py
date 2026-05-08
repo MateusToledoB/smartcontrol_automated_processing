@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import time
+import signal
 
 from core.settings import settings
 from infrastructure.smartsheet.smartsheet_client import SmartsheetClient
@@ -13,6 +14,15 @@ from utils.driver_factory import DriverFactory
 class SmartsheetDispatcher:
     @staticmethod
     def main(worker_id: int, total_workers: int = 1):
+        stop_requested = False
+
+        def _handle_shutdown(signum, _frame):
+            nonlocal stop_requested
+            stop_requested = True
+            print(f"[dispatcher_pe] Sinal {signum} recebido. Encerrando com flush pendente...")
+
+        signal.signal(signal.SIGTERM, _handle_shutdown)
+        signal.signal(signal.SIGINT, _handle_shutdown)
         sheet, _, token, sheet_id, _ = SmartsheetClient.setup_smartsheet(settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO)
         nome_coluna_para_indice = {coluna.title: index for index, coluna in enumerate(sheet.columns)}
 
@@ -33,6 +43,10 @@ class SmartsheetDispatcher:
         all_updates = []
         try:
             for linha in bloco_linhas:
+                updates = []
+                if stop_requested:
+                    print("[dispatcher_pe] Interrupcao solicitada, finalizando loop para aplicar update_bulk.")
+                    break
           
                 dados_celulas = {coluna.title: linha.cells[nome_coluna_para_indice[coluna.title]].value
                                     for coluna in sheet.columns
@@ -51,6 +65,7 @@ class SmartsheetDispatcher:
                 cpf               = colaborador.split("-")[0].strip() if colaborador and "-" in colaborador else None
                 cpf               = str(cpf).zfill(11) if cpf is not None else None
                 motivo_alteracao  = dados_celulas.get('Motivo Alteração', None)
+                motivo_alteracao_normalizado = str(motivo_alteracao).strip().lower()
                 if intervalo != None:
                     horas, minutos = map(int, intervalo.split(":"))
                     intervalo = timedelta(hours=horas, minutes=minutos)
@@ -92,7 +107,7 @@ class SmartsheetDispatcher:
                                 updates = service.adjust()
 
                             case "abandono" | "atraso" | "falta" | "suspensão" | "integração cliente" | "reciclagem" | "liberado pelo cliente":
-                                if motivo_alteracao.strip().lower() == '04.1 - faltas sem justificativa': 
+                                if motivo_alteracao_normalizado == '04.1 - faltas sem justificativa' or motivo_alteracao_normalizado == '04.3 - atrasos sem justificativa': 
                                     service = FaltaAbono(
                                         driver=driver,
                                         row_id=row_id,
@@ -107,7 +122,7 @@ class SmartsheetDispatcher:
                                     )
                                     updates = service.adjust()
                                 
-                                elif motivo_alteracao.strip().lower() == '09.1 - b.h. negativo':
+                                elif motivo_alteracao_normalizado == '09.1 - b.h. negativo':
                                     service = FaltaDescontoBH(
                                         driver=driver,
                                         row_id=row_id,

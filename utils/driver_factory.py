@@ -7,7 +7,6 @@ from selenium.webdriver.edge.service import Service
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from webdriver_manager.core.driver_cache import DriverCacheManager
 
-
 class DriverFactory:
     @staticmethod
     def create_edge_driver(worker_id=None):

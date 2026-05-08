@@ -10,7 +10,7 @@ from utils.driver_factory import DriverFactory
 
 class SmartsheetDispatcher:
     @staticmethod
-    def main(worker_id: int, total_workers: int = 1):
+    def main(worker_id: int, total_workers: int = 5):
         sheet, _, token, sheet_id, _ = SmartsheetClient.setup_smartsheet(settings.SHEET_ID_APONTAMENTO_IMPAR)
         nome_coluna_para_indice = {coluna.title: index for index, coluna in enumerate(sheet.columns)}
 

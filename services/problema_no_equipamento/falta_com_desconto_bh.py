@@ -101,7 +101,7 @@ class FaltaDescontoBH:
                     time.sleep(1)
                 case _:
                     updates.append({"column": "Status", "value": "Não Tratado"})
-                    updates.append({"column": "Motivo Recusa", "value": {texto_notify}})
+                    updates.append({"column": "Motivo Recusa", "value": texto_notify})
                     return updates
 
             classificacao_fata = FaltaDescontoBH.dict_classificacao_fata[self.classificacao_falta_lancado]

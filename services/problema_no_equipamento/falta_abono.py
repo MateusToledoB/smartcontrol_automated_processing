@@ -11,6 +11,8 @@ from infrastructure.smartsheet.smartsheet_client import SmartsheetClient
 from infrastructure.notifications.teams_webhook_client import TeamsWebhookClient
 from utils.selenium_utils import SeleniumUtils
 
+from services.treatment_rules import TreatmentRules
+
 class FaltaAbono:
     def __init__(self, driver, row_id, sheet_id, token, data_registro, classificacao_falta_lancado, cr_number, df_cr, observacao):
         self.driver = driver
@@ -199,6 +201,10 @@ class FaltaAbono:
                     return updates  
             match total_batidas:
                 case 0 | 2 | 4:
+                    if classificacao_fata == "Treinamento / Reciclagem" and total_batidas > 0:
+                        updates.append({"column": "Status", "value": "Não Tratado"})
+                        updates.append({"column": "Motivo Recusa", "value": "Reciclagem com batidas registradas"})
+                        return updates
                     if classificacao_fata == "Integração Cliente" and total_batidas > 0:
                         updates.append({"column": "Status", "value": "Não Tratado"})
                         updates.append({"column": "Motivo Recusa", "value": "Batida realizada em integração"})

@@ -70,7 +70,7 @@ class HorarioContratualPrevisto:
                     updates.append({"column": "Status", "value": "Tratado"})
                     return updates
                 case "0 dias de 0 colaboradores foram preenchidos. Alterações específicas devem ser feitas no módulo de tratamento.":
-                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Status", "value": "Tratado"})
                     updates.append({"column": "Motivo Recusa", "value": "0 dias de 0 colaboradores foram preenchidos."})
                     return updates
                 case _:

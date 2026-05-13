@@ -51,7 +51,7 @@ class TreatmentRules:
     @staticmethod
     def change_rule_bh(driver, data_registro, updates):
         try:
-            banco_horas = WebDriverWait(driver, 20).until(
+            banco_horas = WebDriverWait(driver, 8).until(
                 EC.element_to_be_clickable((By.XPATH, "//input[@value='Tratar banco de horas']"))
             )
 
@@ -125,7 +125,7 @@ class TreatmentRules:
     @staticmethod
     def change_rule_bh_temp(driver, data_registro, updates):
         try:
-            banco_horas = WebDriverWait(driver, 20).until(
+            banco_horas = WebDriverWait(driver, 8).until(
                 EC.element_to_be_clickable((By.XPATH, "//input[@value='Tratar banco de horas']"))
             )
 
@@ -198,7 +198,39 @@ class TreatmentRules:
             updates.append({"column": "Motivo Recusa", "value": "Não foi possivel alterar a regra"})
             return updates
         
+    @staticmethod
+    def records_observation(driver, observacao, data_registro, updates):
+        driver.switch_to.default_content()
+        elemento = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@title="Fechar"]'))
+        )
+        driver.execute_script("arguments[0].click();", elemento)
+        
+        # espera o modal SUMIR de verdade
+        WebDriverWait(driver, 10).until(
+            EC.staleness_of(elemento)
+        )
+        WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((By.XPATH, "//*[@id='hora_extra_button']"))
+        ).click()
+        
+        SeleniumUtils.iframe_acess(driver, "/html/body/div[3]/div/div[1]/div/div/div[2]/div/iframe")
 
-
-            
-            
+        input_observacao = WebDriverWait(driver, 10).until(
+                EC.visibility_of_element_located((
+                    By.XPATH,f"//td[normalize-space()='{data_registro}']/preceding-sibling::td//input[contains(@name,'observacao')]"
+                ))
+            )
+        input_observacao.clear()
+        input_observacao.send_keys(observacao)
+        input_observacao.click()
+        time.sleep(3)
+        WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, "//*[@value='Salvar']"))
+        ).click()
+        time.sleep(2)
+        notify = WebDriverWait(driver, 50).until(EC.presence_of_element_located((By.XPATH,'//*[@id="top_pad_div"]/div/div/div[1]/span')))
+        notify = notify.get_attribute("innerText")
+        #print(f'Notificação hora extra: {notify}')
+        if notify != "Registros salvos com sucesso":
+            updates.append({"column": "Motivo Recusa", "value": "Erro ao lançar observacao falta > 3h"})

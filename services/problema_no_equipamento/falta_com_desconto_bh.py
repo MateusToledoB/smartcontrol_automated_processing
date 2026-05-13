@@ -38,10 +38,10 @@ class FaltaDescontoBH:
     def adjust(self):
         updates = []
         try:
-            updates = TreatmentRules.change_rule_bh(self.driver, self.data_registro, updates)
+            response_change_rule_bh = TreatmentRules.change_rule_bh(self.driver, self.data_registro, updates)
 
-            if updates:
-                return updates
+            if response_change_rule_bh:
+                return response_change_rule_bh
 
             classificacao_fata = FaltaDescontoBH.dict_classificacao_fata[self.classificacao_falta_lancado]
             self.driver.switch_to.default_content()
@@ -83,7 +83,22 @@ class FaltaDescontoBH:
                 fim = time.time()
                 return updates
             else:
-                pass
+                elemento_tempo_falta = self.driver.find_element(By.XPATH, "//font[@color='red']")
+                
+                texto_tempo_falta = elemento_tempo_falta.text.strip() 
+                # #print(f'Tempo de falta: {texto_tempo_falta}')
+                if texto_tempo_falta == '':
+                    updates.append({"column": "Status", "value": "Não Tratado"})
+                    updates.append({"column": "Motivo Recusa", "value": "Sem tempo de falta gerado"})
+                    return updates
+                
+                tempo_falta_obj = dt.datetime.strptime(texto_tempo_falta, "%H:%M").time()
+                tempo_limite = dt.time(3, 0)
+
+                if tempo_falta_obj > tempo_limite:
+                    lancar_observacao_falta = True
+                else:
+                    lancar_observacao_falta = False
 
             horario_contratual_colaborador     =  self.driver.find_element(By.XPATH,'//*[@selected="selected"]')
             horario_contratual_colaborador_str = horario_contratual_colaborador.get_attribute("innerText")
@@ -123,6 +138,12 @@ class FaltaDescontoBH:
                         EC.element_to_be_clickable((By.XPATH, "//*[@id='motivo_abonar']/following::*[@title='Salvar'][1]"))
                     ).click()
                     time.sleep(3)
+
+                    if lancar_observacao_falta:    
+                        response_records_observation = TreatmentRules.records_observation(self.driver, self.observacao, self.data_registro, updates)
+                        if response_records_observation:
+                            return response_records_observation
+                        
                     updates.append({"column": "Status", "value": "Tratado"})
                     return updates
                 elif total_batidas > 4:
@@ -130,28 +151,11 @@ class FaltaDescontoBH:
                     updates.append({"column": "Motivo Recusa", "value": "Mais de 4 batidas"})
                     return updates
                 
-                
                 elif total_batidas == 2:
                     if SmartsheetClient.return_validation_cr(self.df_cr, self.cr_number, "hora") == "NÃO":
                         updates.append({"column": "Status", "value": "Não Tratado"})
                         updates.append({"column": "Motivo Recusa", "value": "CR não autorizado"})
                         return updates
-                    
-                    elemento_tempo_falta = self.driver.find_element(By.XPATH, "//font[@color='red']")
-                
-                    texto_tempo_falta = elemento_tempo_falta.text.strip() 
-                    # #print(f'Tempo de falta: {texto_tempo_falta}')
-                    if texto_tempo_falta == '':
-                        SmartsheetClient.update_smartsheet("Motivo Recusa", 'Sem tempo de falta gerado', self.row_id, self.sheet_id,self.token)
-                        SmartsheetClient.update_smartsheet("Status", "Não Tratado", self.row_id, self.sheet_id,self.token)
-                        return
-                    tempo_falta_obj = dt.datetime.strptime(texto_tempo_falta, "%H:%M").time()
-                    tempo_limite = dt.time(3, 0)
-
-                    if tempo_falta_obj > tempo_limite:
-                        lancar_observacao_falta = True
-                    else:
-                        lancar_observacao_falta = False
                     
                     # print(f'Lancar obs: {lancar_observacao_falta}')
                     time.sleep(1)
@@ -178,40 +182,11 @@ class FaltaDescontoBH:
                     
                     updates.append({"column": "Status", "value": "Tratado"})
 
-                    if lancar_observacao_falta:
-                        self.driver.switch_to.default_content()
-                        elemento = WebDriverWait(self.driver, 10).until(
-                            EC.presence_of_element_located((By.XPATH, '//*[@title="Fechar"]'))
-                        )
-                        self.driver.execute_script("arguments[0].click();", elemento)
-                       
-                        # espera o modal SUMIR de verdade
-                        WebDriverWait(self.driver, 10).until(
-                            EC.staleness_of(elemento)
-                        )
-                        WebDriverWait(self.driver, 5).until(
-                            EC.element_to_be_clickable((By.XPATH, "//*[@id='hora_extra_button']"))
-                        ).click()
-                      
-                        SeleniumUtils.iframe_acess(self.driver, "/html/body/div[3]/div/div[1]/div/div/div[2]/div/iframe")
-
-                        input_observacao = WebDriverWait(self.driver, 10).until(
-                                EC.visibility_of_element_located((
-                                    By.XPATH,f"//td[normalize-space()='{self.data_registro}']/preceding-sibling::td//input[contains(@name,'observacao')]"
-                                ))
-                            )
-                        input_observacao.send_keys(self.observacao)
-                        input_observacao.click()
-                        time.sleep(3)
-                        WebDriverWait(self.driver, 10).until(
-                            EC.visibility_of_element_located((By.XPATH, "//*[@value='Salvar']"))
-                        ).click()
-                        time.sleep(2)
-                        notify = WebDriverWait(self.driver, 50).until(EC.presence_of_element_located((By.XPATH,'//*[@id="top_pad_div"]/div/div/div[1]/span')))
-                        notify = notify.get_attribute("innerText")
-                        #print(f'Notificação hora extra: {notify}')
-                        if notify != "Registros salvos com sucesso":
-                            updates.append({"column": "Motivo Recusa", "value": "Erro ao lançar observacao falta > 3h"})
+                    if lancar_observacao_falta:    
+                        response_records_observation = TreatmentRules.records_observation(self.driver, self.observacao, self.data_registro, updates)
+                        if response_records_observation:
+                            return response_records_observation
+                        
                     return updates  
             match total_batidas:
                 case 0 | 2 | 4:
@@ -247,6 +222,12 @@ class FaltaDescontoBH:
                         EC.element_to_be_clickable((By.XPATH, "//*[@id='motivo_abonar']/following::*[@title='Salvar'][1]"))
                     ).click()
                     time.sleep(3)
+
+                    if lancar_observacao_falta:    
+                        response_records_observation = TreatmentRules.records_observation(self.driver, self.observacao, self.data_registro, updates)
+                        if response_records_observation:
+                            return response_records_observation
+                        
                     updates.append({"column": "Status", "value": "Tratado"})
                     return updates
 
@@ -261,6 +242,7 @@ class FaltaDescontoBH:
                     return updates
                 
         except Exception as e:
+                print(e)
                 elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
                 updates.append({"column": "Status", "value": "Não Tratado"})
                 updates.append({"column": "Motivo Recusa", "value": "Ponto fechado."})

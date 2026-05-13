@@ -34,10 +34,10 @@ class FaltaDescontoBHTemp:
     def adjust(self):
         updates = []
         try:
-            updates = TreatmentRules.change_rule_bh_temp(self.driver, self.data_registro, updates)
-            
-            if updates:
-                return updates
+            response_change_rule_bh_temp = TreatmentRules.change_rule_bh_temp(self.driver, self.data_registro, updates)
+
+            if response_change_rule_bh_temp:
+                return response_change_rule_bh_temp
 
             SeleniumUtils.iframe_acess(self.driver, "/html/body/div[3]/div/div[1]/div/div/div[2]/div/iframe")
 

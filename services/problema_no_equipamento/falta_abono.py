@@ -12,6 +12,7 @@ from infrastructure.notifications.teams_webhook_client import TeamsWebhookClient
 from utils.selenium_utils import SeleniumUtils
 
 from services.treatment_rules import TreatmentRules
+from utils.time_utils import TimeUtils
 
 class FaltaAbono:
     def __init__(self, driver, row_id, sheet_id, token, data_registro, classificacao_falta_lancado, cr_number, df_cr, observacao):
@@ -162,8 +163,16 @@ class FaltaAbono:
                         EC.element_to_be_clickable((By.XPATH, "//*[@id='motivo_abonar']/following::*[@title='Salvar'][1]"))
                     ).click()
                     time.sleep(3)
-                    updates.append({"column": "Status", "value": "Tratado"})
+                  
+                    lancamento_intervalo = TreatmentRules.check_interval_launch(self.driver, self.data_registro)
 
+                    if lancamento_intervalo == False:
+                        updates.append({"column": "Status", "value": "Não Tratado"})
+                        updates.append({"column": "Motivo Recusa", "value": "Erro ao lançar intervalo para ch > 6h"})
+                        return updates
+                    
+                    updates.append({"column": "Status", "value": "Tratado"})
+                        
                     if lancar_observacao_falta:
                         self.driver.switch_to.default_content()
                         elemento = WebDriverWait(self.driver, 10).until(
@@ -197,7 +206,8 @@ class FaltaAbono:
                         notify = notify.get_attribute("innerText")
                         #print(f'Notificação hora extra: {notify}')
                         if notify != "Registros salvos com sucesso":
-                            updates.append({"column": "Motivo Recusa", "value": "Erro ao lançar observacao falta > 3h"})
+                            updates.append({"column": "Motivo Recusa", "value": f"Erro ao lançar {notify}"})
+                    
                     return updates  
             match total_batidas:
                 case 0 | 2 | 4:
@@ -251,7 +261,6 @@ class FaltaAbono:
                     return updates
                 
         except Exception as e:
-                print(f'------ erro: {e}')
                 elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
                 updates.append({"column": "Status", "value": "Não Tratado"})
                 updates.append({"column": "Motivo Recusa", "value": "Ponto fechado."})

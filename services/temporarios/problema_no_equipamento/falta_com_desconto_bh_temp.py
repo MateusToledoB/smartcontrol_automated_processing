@@ -9,6 +9,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from infrastructure.smartsheet.smartsheet_client import SmartsheetClient
 from infrastructure.notifications.teams_webhook_client import TeamsWebhookClient
+from services.treatment_rules import TreatmentRules
 from utils.selenium_utils import SeleniumUtils
 
 class FaltaDescontoBHTemp:
@@ -33,75 +34,11 @@ class FaltaDescontoBHTemp:
     def adjust(self):
         updates = []
         try:
-            banco_horas = WebDriverWait(self.driver, 20).until(
-                EC.element_to_be_clickable((By.XPATH, "//input[@value='Tratar banco de horas']"))
-            )
-
-            self.driver.execute_script("arguments[0].click();", banco_horas)
-
-            SeleniumUtils.iframe_acess(self.driver, "/html/body/div[2]/div/div[1]/div/div/div[2]/div/iframe")
-
-            radio_xpath = (
-                f"//td[contains(normalize-space(), '{self.data_registro}')]"
-                f"/parent::tr//input[@type='radio']"
-            )
-
-            checkbox_xpath = (
-                f"//td[contains(normalize-space(), '{self.data_registro}')]"
-                f"/parent::tr//input[@type='checkbox']"
-            )
-
-            # pega os radios
-            radios = WebDriverWait(self.driver, 20).until(
-                EC.presence_of_all_elements_located((By.XPATH, radio_xpath))
-            )
-
-            desc_element = radios[0]
-
-            # verifica se está desabilitado
-            if not desc_element.is_enabled():
-
-                checkboxes = WebDriverWait(self.driver, 20).until(
-                    EC.presence_of_all_elements_located((By.XPATH, checkbox_xpath))
-                )
-
-                self.driver.execute_script(
-                    "arguments[0].click();",
-                    checkboxes[0]
-                )
-
-            # clica no radio
-            self.driver.execute_script(
-                "arguments[0].click();",
-                desc_element
-            )
-
-            WebDriverWait(self.driver, 20).until(
-                EC.presence_of_element_located((By.XPATH, "//button[text()='Salvar']"))
-            ).click()
-
-            time.sleep(2)
-
-            notify_mudanca_regra = WebDriverWait(self.driver, 20).until(
-                EC.presence_of_element_located((By.XPATH, "//span[@style='font-size: 11px;']"))
-            )
+            updates = TreatmentRules.change_rule_bh_temp(self.driver, self.data_registro, updates)
             
-            texto_notify = notify_mudanca_regra.text if notify_mudanca_regra else ""
+            if updates:
+                return updates
 
-            match texto_notify:
-                case "Tratamento de banco de horas salvo com sucesso":
-                    self.driver.switch_to.default_content()
-                    SeleniumUtils.iframe_acess(self.driver, "/html/body/div[3]/div/div[1]/div/div/div[2]/div/iframe")
-                    WebDriverWait(self.driver, 10).until(
-                        EC.element_to_be_clickable((By.XPATH, "//span[@title='Fechar']"))
-                    ).click()
-                    time.sleep(1)
-                    
-                case _:
-                    updates.append({"column": "Status", "value": "Não Tratado"})
-                    updates.append({"column": "Motivo Recusa", "value": {texto_notify}})
-                    return updates
-                
             SeleniumUtils.iframe_acess(self.driver, "/html/body/div[3]/div/div[1]/div/div/div[2]/div/iframe")
 
             WebDriverWait(self.driver, 10).until(

@@ -242,7 +242,6 @@ class FaltaDescontoBH:
                     return updates
                 
         except Exception as e:
-                print(e)
                 elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
                 updates.append({"column": "Status", "value": "Não Tratado"})
                 updates.append({"column": "Motivo Recusa", "value": "Ponto fechado."})

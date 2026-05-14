@@ -39,6 +39,7 @@ class SmartsheetDispatcher:
 
         bloco_linhas = sheet.rows[start:end]
 
+        batch_size = 50
         all_updates = []
         driver = DriverFactory.create_edge_driver()
 
@@ -156,7 +157,10 @@ class SmartsheetDispatcher:
                         all_updates.append({
                             "row_id": row_id,
                             "updates": updates
-                        })    
+                        })
+                        if len(all_updates) >= batch_size:
+                            SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_TEMPORARIOS)
+                            all_updates.clear()
 
         except Exception as e:
             print(f'erro: {e}')

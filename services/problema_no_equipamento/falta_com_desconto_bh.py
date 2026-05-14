@@ -83,22 +83,7 @@ class FaltaDescontoBH:
                 fim = time.time()
                 return updates
             else:
-                elemento_tempo_falta = self.driver.find_element(By.XPATH, "//font[@color='red']")
-                
-                texto_tempo_falta = elemento_tempo_falta.text.strip() 
-                # #print(f'Tempo de falta: {texto_tempo_falta}')
-                if texto_tempo_falta == '':
-                    updates.append({"column": "Status", "value": "Não Tratado"})
-                    updates.append({"column": "Motivo Recusa", "value": "Sem tempo de falta gerado"})
-                    return updates
-                
-                tempo_falta_obj = dt.datetime.strptime(texto_tempo_falta, "%H:%M").time()
-                tempo_limite = dt.time(3, 0)
-
-                if tempo_falta_obj > tempo_limite:
-                    lancar_observacao_falta = True
-                else:
-                    lancar_observacao_falta = False
+                pass
 
             horario_contratual_colaborador     =  self.driver.find_element(By.XPATH,'//*[@selected="selected"]')
             horario_contratual_colaborador_str = horario_contratual_colaborador.get_attribute("innerText")
@@ -107,6 +92,23 @@ class FaltaDescontoBH:
                 updates.append({"column": "Status", "value": "Não Tratado"})
                 updates.append({"column": "Motivo Recusa", "value": "Dia de folga"})
                 return updates
+            
+            elemento_tempo_falta = self.driver.find_element(By.XPATH, "//font[@color='red']")
+                
+            texto_tempo_falta = elemento_tempo_falta.text.strip() 
+            # #print(f'Tempo de falta: {texto_tempo_falta}')
+            if texto_tempo_falta == '':
+                updates.append({"column": "Status", "value": "Não Tratado"})
+                updates.append({"column": "Motivo Recusa", "value": "Sem tempo de falta gerado"})
+                return updates
+            
+            tempo_falta_obj = dt.datetime.strptime(texto_tempo_falta, "%H:%M").time()
+            tempo_limite = dt.time(3, 0)
+
+            if tempo_falta_obj > tempo_limite:
+                lancar_observacao_falta = True
+            else:
+                lancar_observacao_falta = False
 
             trs = self.driver.find_elements(
                 By.XPATH,

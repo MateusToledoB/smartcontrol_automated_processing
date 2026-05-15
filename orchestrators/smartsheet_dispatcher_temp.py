@@ -42,6 +42,7 @@ class SmartsheetDispatcher:
 
         batch_size = 50
         execution_start_time = datetime.now()
+        send_execution_mapping("temporarios", "Temporarios", 0, execution_start_time, running=True)
         all_updates = []
         driver = DriverFactory.create_edge_driver()
 

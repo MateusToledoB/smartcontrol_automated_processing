@@ -43,6 +43,7 @@ class SmartsheetDispatcher:
         driver = DriverFactory.create_edge_driver()
         batch_size = 50
         execution_start_time = datetime.now()
+        send_execution_mapping("problema_no_equipamento", "Problema no equipamento", 0, execution_start_time, running=True)
         all_updates = []
         try:
             for linha in bloco_linhas:

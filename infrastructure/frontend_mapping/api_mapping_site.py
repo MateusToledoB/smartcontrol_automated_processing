@@ -1,9 +1,11 @@
 from core.settings import settings
 import requests
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from utils.time_utils import TimeUtils
 
 url = settings.URL_API_MAPPING_SITE
+BR_TZ = ZoneInfo("America/Sao_Paulo")
 
 def send_mapping_data(data):
     payload = {
@@ -26,7 +28,7 @@ def send_execution_mapping(
     start_time: datetime,
     running: bool
 ) -> datetime:
-    called_at = datetime.now()
+    called_at = datetime.now(BR_TZ)
     payload = {
         "automation_name": automation_name,
         "titulo": titulo,

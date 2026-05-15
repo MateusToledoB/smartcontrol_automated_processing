@@ -2,6 +2,13 @@ import datetime as dt
 
 class TimeUtils:
     @staticmethod
+    def format_elapsed(start_time: dt.datetime, end_time: dt.datetime) -> str:
+        elapsed = end_time - start_time
+        total_seconds = int(elapsed.total_seconds())
+        minutes, seconds = divmod(max(total_seconds, 0), 60)
+        return f"{minutes:02d}m {seconds:02d}s"
+
+    @staticmethod
     def verifica_proximidade(horario_hc: dt.time, hora_informada_time: dt.time) -> bool:
         base = dt.date.today()
         hc = dt.datetime.combine(base, horario_hc)

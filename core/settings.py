@@ -20,6 +20,11 @@ class Settings():
 
     SMARTSHEET_TOKEN: str = os.getenv('SMARTSHEET_TOKEN')
 
+    URL_API_MAPPING_SITE: str = os.getenv('URL_API_MAPPING_SITE')
+
+    USER_NAME_API_SITE_MAPPING: str = os.getenv('USER_NAME_API_SITE_MAPPING')
+
+    PASSWORD_API_SITE_MAPPING: str = os.getenv('PASSWORD_API_SITE_MAPPING')
     
 
 settings = Settings()

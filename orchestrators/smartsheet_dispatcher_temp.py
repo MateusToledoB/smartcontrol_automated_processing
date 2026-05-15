@@ -5,6 +5,7 @@ import signal
 
 from core.settings import settings
 from infrastructure.smartsheet.smartsheet_client import SmartsheetClient
+from infrastructure.frontend_mapping.api_mapping_site import send_execution_mapping
 from services.temporarios.problema_no_equipamento.horario_contratual_previsto_temp import HorarioContratualPrevistoTemp
 from services.temporarios.problema_no_equipamento.informar_horario_realizado_temp import InformarHorarioRealizadoTemp
 from services.temporarios.problema_no_equipamento.falta_abono_temp import FaltaAbonoTemp
@@ -40,6 +41,7 @@ class SmartsheetDispatcher:
         bloco_linhas = sheet.rows[start:end]
 
         batch_size = 50
+        execution_start_time = datetime.now()
         all_updates = []
         driver = DriverFactory.create_edge_driver()
 
@@ -159,15 +161,26 @@ class SmartsheetDispatcher:
                             "updates": updates
                         })
                         if len(all_updates) >= batch_size:
-                            SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_TEMPORARIOS)
-                            all_updates.clear()
+                            batch_count = len(all_updates)
+                            try:
+                                SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_TEMPORARIOS)
+                            finally:
+                                send_execution_mapping("temporarios", "Temporarios", batch_count, execution_start_time, running=True)
+                                all_updates.clear()
 
         except Exception as e:
             print(f'erro: {e}')
         finally:
             driver.quit()
             if all_updates:
-                SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_TEMPORARIOS)          
+                final_count = len(all_updates)
+                try:
+                    SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_TEMPORARIOS)
+                finally:
+                    send_execution_mapping("temporarios", "Temporarios", final_count, execution_start_time, running=False)
+            else:
+                print("[dispatcher_temp] Nenhum update pendente; enviando status para API com 0 linhas.")
+                send_execution_mapping("temporarios", "Temporarios", 0, execution_start_time, running=False)
 
 if __name__ == "__main__":
     import sys

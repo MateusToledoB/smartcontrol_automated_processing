@@ -4,6 +4,7 @@ import signal
 
 from core.settings import settings
 from infrastructure.smartsheet.smartsheet_client import SmartsheetClient
+from infrastructure.frontend_mapping.api_mapping_site import send_execution_mapping
 from services.problema_no_equipamento.horario_contratual_previsto import HorarioContratualPrevisto
 from services.problema_no_equipamento.informar_horario_realizado import InformarHorarioRealizado
 from services.problema_no_equipamento.falta_abono import FaltaAbono
@@ -41,6 +42,7 @@ class SmartsheetDispatcher:
 
         driver = DriverFactory.create_edge_driver()
         batch_size = 50
+        execution_start_time = datetime.now()
         all_updates = []
         try:
             for linha in bloco_linhas:
@@ -144,15 +146,26 @@ class SmartsheetDispatcher:
                                 "updates": updates
                             })
                             if len(all_updates) >= batch_size:
-                                SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO)
-                                all_updates.clear()
+                                batch_count = len(all_updates)
+                                try:
+                                    SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO)
+                                finally:
+                                    send_execution_mapping("problema_no_equipamento", "Problema no equipamento", batch_count, execution_start_time, running=True)
+                                    all_updates.clear()
                                 
         except Exception as e:
             print(f'erro: {e}')
         finally:
             driver.quit()
             if all_updates:
-                SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO)
+                final_count = len(all_updates)
+                try:
+                    SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO)
+                finally:
+                    send_execution_mapping("problema_no_equipamento", "Problema no equipamento", final_count, execution_start_time, running=False)
+            else:
+                print("[dispatcher_pe] Nenhum update pendente; enviando status para API com 0 linhas.")
+                send_execution_mapping("problema_no_equipamento", "Problema no equipamento", 0, execution_start_time, running=False)
 
 if __name__ == "__main__":
     import sys

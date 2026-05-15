@@ -2,7 +2,20 @@ import datetime as dt
 
 class TimeUtils:
     @staticmethod
+    def _normalize_pair_datetimes(
+        start_time: dt.datetime,
+        end_time: dt.datetime
+    ) -> tuple[dt.datetime, dt.datetime]:
+        # Avoid TypeError when subtracting naive and aware datetimes.
+        if start_time.tzinfo is None and end_time.tzinfo is not None:
+            start_time = start_time.replace(tzinfo=end_time.tzinfo)
+        elif start_time.tzinfo is not None and end_time.tzinfo is None:
+            end_time = end_time.replace(tzinfo=start_time.tzinfo)
+        return start_time, end_time
+
+    @staticmethod
     def format_elapsed(start_time: dt.datetime, end_time: dt.datetime) -> str:
+        start_time, end_time = TimeUtils._normalize_pair_datetimes(start_time, end_time)
         elapsed = end_time - start_time
         total_seconds = int(elapsed.total_seconds())
         minutes, seconds = divmod(max(total_seconds, 0), 60)

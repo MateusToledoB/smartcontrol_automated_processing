@@ -29,12 +29,17 @@ def send_execution_mapping(
     running: bool
 ) -> datetime:
     called_at = datetime.now(BR_TZ)
+    if start_time.tzinfo is None:
+        normalized_start_time = start_time.replace(tzinfo=BR_TZ)
+    else:
+        normalized_start_time = start_time.astimezone(BR_TZ)
+
     payload = {
         "automation_name": automation_name,
         "titulo": titulo,
         "ultima_execucao": called_at.strftime("%d/%m/%Y %H:%M:%S"),
         "affected_rows": str(affected_rows),
-        "tempo_execucao": TimeUtils.format_elapsed(start_time, called_at),
+        "tempo_execucao": TimeUtils.format_elapsed(normalized_start_time, called_at),
         "proxima_execucao": "Running" if running else (called_at + timedelta(minutes=5)).strftime("%d/%m/%Y %H:%M:%S"),
     }
     send_mapping_data(payload)

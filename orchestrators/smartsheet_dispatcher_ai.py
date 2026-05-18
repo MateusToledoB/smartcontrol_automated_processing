@@ -41,6 +41,7 @@ class SmartsheetDispatcher:
         execution_start_time = datetime.now()
         send_execution_mapping("apontamento_impar", "Apontamento impar", 0, execution_start_time, running=True)
         all_updates = []
+        batch_start_time = datetime.now()
         try:
             for linha in bloco_linhas:
                 updates = []
@@ -106,8 +107,9 @@ class SmartsheetDispatcher:
                             try:
                                 SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_APONTAMENTO_IMPAR)
                             finally:
-                                send_execution_mapping("apontamento_impar", "Apontamento impar", batch_count, execution_start_time, running=True)
+                                send_execution_mapping("apontamento_impar", "Apontamento impar", batch_count, batch_start_time, running=True)
                                 all_updates.clear()
+                                batch_start_time = datetime.now()
 
         except Exception as e:
             print(f'erro: {e}')

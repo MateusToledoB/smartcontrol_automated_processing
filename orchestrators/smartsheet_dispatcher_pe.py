@@ -165,7 +165,7 @@ class SmartsheetDispatcher:
                 try:
                     SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO)
                 finally:
-                    send_execution_mapping("problema_no_equipamento", "Problema no equipamento", final_count, execution_start_time, running=False)
+                    send_execution_mapping("problema_no_equipamento", "Problema no equipamento", final_count, batch_start_time, running=False)
             else:
                 print("[dispatcher_pe] Nenhum update pendente; enviando status para API com 0 linhas.")
                 send_execution_mapping("problema_no_equipamento", "Problema no equipamento", 0, execution_start_time, running=False)

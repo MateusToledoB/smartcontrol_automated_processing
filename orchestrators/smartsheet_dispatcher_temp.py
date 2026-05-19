@@ -180,7 +180,7 @@ class SmartsheetDispatcher:
                 try:
                     SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_TEMPORARIOS)
                 finally:
-                    send_execution_mapping("temporarios", "Temporarios", final_count, execution_start_time, running=False)
+                    send_execution_mapping("temporarios", "Temporarios", final_count, batch_start_time, running=False)
             else:
                 print("[dispatcher_temp] Nenhum update pendente; enviando status para API com 0 linhas.")
                 send_execution_mapping("temporarios", "Temporarios", 0, execution_start_time, running=False)

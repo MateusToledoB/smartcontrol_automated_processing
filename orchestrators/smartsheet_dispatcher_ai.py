@@ -120,7 +120,7 @@ class SmartsheetDispatcher:
                 try:
                     SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_APONTAMENTO_IMPAR)
                 finally:
-                    send_execution_mapping("apontamento_impar", "Apontamento impar", final_count, execution_start_time, running=False)
+                    send_execution_mapping("apontamento_impar", "Apontamento impar", final_count, batch_start_time, running=False)
             else:
                 print("[dispatcher_ai] Nenhum update pendente; enviando status para API com 0 linhas.")
                 send_execution_mapping("apontamento_impar", "Apontamento impar", 0, execution_start_time, running=False)

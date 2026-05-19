@@ -36,8 +36,8 @@ def send_execution_mapping(
         "titulo": titulo,
         "ultima_execucao": called_at.strftime("%d/%m/%Y %H:%M:%S"),
         "affected_rows": str(affected_rows),
-        "tempo_execucao": TimeUtils.format_elapsed(normalized_start_time, called_at),
-        "proxima_execucao": "Running" if running else (called_at + timedelta(minutes=5)).strftime("%d/%m/%Y %H:%M:%S"),
+        "tempo_execucao": "Running" if running else TimeUtils.format_elapsed(normalized_start_time, called_at),
+        "proxima_execucao": "Aguardando execução atual" if running else (called_at + timedelta(minutes=5)).strftime("%d/%m/%Y %H:%M:%S"),
     }
     send_mapping_data(payload)
     return called_at

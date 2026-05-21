@@ -39,7 +39,7 @@ class SmartsheetDispatcher:
         driver = DriverFactory.create_edge_driver()
         batch_size = 50
         execution_start_time = datetime.now()
-        send_execution_mapping("apontamento_impar", "Apontamento impar", 0, execution_start_time, running=True)
+        send_execution_mapping("apontamento_impar", "Apontamento impar", 0, execution_start_time, running=True, starting=True)
         all_updates = []
         batch_start_time = datetime.now()
         try:
@@ -64,6 +64,7 @@ class SmartsheetDispatcher:
                 entrada           = dados_celulas.get('Marcação/Entrada', None)
                 saida             = dados_celulas.get('Horário de Saída', None)
                 intervalo         = dados_celulas.get('Tempo de Intervalo', None)
+                gerente_regional  = dados_celulas.get('Gerente_Regional', None)
                 cpf               = colaborador.split("-")[0].strip() if colaborador and "-" in colaborador else None
                 cpf               = str(cpf).zfill(11) if cpf is not None else None
 
@@ -93,7 +94,8 @@ class SmartsheetDispatcher:
                                 sheet_id=sheet_id,
                                 token=token,
                                 data_registro=data_registro,
-                                hora_informada=hora_informada
+                                hora_informada=hora_informada,
+                                gerente_regional=gerente_regional
                             )
                             updates = service.adjust()
 
@@ -123,7 +125,7 @@ class SmartsheetDispatcher:
                     send_execution_mapping("apontamento_impar", "Apontamento impar", final_count, batch_start_time, running=False)
             else:
                 print("[dispatcher_ai] Nenhum update pendente; enviando status para API com 0 linhas.")
-                send_execution_mapping("apontamento_impar", "Apontamento impar", 0, execution_start_time, running=False)
+                send_execution_mapping("apontamento_impar", "Apontamento impar", 0, batch_start_time, running=False)
 
 
 if __name__ == "__main__":

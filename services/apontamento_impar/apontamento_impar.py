@@ -12,13 +12,19 @@ from utils.time_utils import TimeUtils
 
 
 class ApontamentoImpar:
-    def __init__(self, driver, row_id, sheet_id, token, data_registro, hora_informada):
+
+    GERENTES_REGIONAIS_BLOQUEADOS = ['TIAGO MUNHOZ ANDRADE',
+                                     'WILLIAN ROBERTO DE OLIVEIRA',
+                                     'JEFFERSON GUSTAVO DA SILVA']
+    
+    def __init__(self, driver, row_id, sheet_id, token, data_registro, hora_informada, gerente_regional):
         self.driver = driver
         self.row_id = row_id
         self.sheet_id = sheet_id
         self.token = token
         self.data_registro = data_registro
         self.hora_informada = hora_informada
+        self.gerente_regional = gerente_regional
 
     def adjust(self):
         updates = []
@@ -193,75 +199,77 @@ class ApontamentoImpar:
                                 case "Registro realizado com sucesso":
                                     updates.append({"column": "Status", "value": "Tratado"})
 
-                                    self.driver.switch_to.default_content()
-                                    elemento = WebDriverWait(self.driver, 10).until(
-                                        EC.presence_of_element_located((By.XPATH, '//*[@title="Fechar"]'))
-                                    )
-                                    self.driver.execute_script("arguments[0].click();", elemento)
+                                    if self.gerente_regional not in ApontamentoImpar.GERENTES_REGIONAIS_BLOQUEADOS:
 
-                                    try:
-                                        WebDriverWait(self.driver, 5).until(
-                                            EC.visibility_of_element_located((By.XPATH, f"//tr[.//*[normalize-space(text())='{self.data_registro}']]//*[contains(@style,'color: red')]"))
+                                        self.driver.switch_to.default_content()
+                                        elemento = WebDriverWait(self.driver, 10).until(
+                                            EC.presence_of_element_located((By.XPATH, '//*[@title="Fechar"]'))
                                         )
-
-                                        WebDriverWait(self.driver, 5).until(
-                                            EC.element_to_be_clickable((By.XPATH, "//*[@id='hora_extra_button']"))
-                                        ).click()
-
-                                        SeleniumUtils.iframe_acess(self.driver, "/html/body/div[3]/div/div[1]/div/div/div[2]/div/iframe")
-
-                                        xpath_select = f"(//div[@class='body'])[1]//table//tr[td[normalize-space()='{self.data_registro}']]//select"
-                                        select_hora_extra = WebDriverWait(self.driver, 10).until(
-                                            EC.visibility_of_element_located((By.XPATH, xpath_select))
-                                        )
+                                        self.driver.execute_script("arguments[0].click();", elemento)
 
                                         try:
-                                            select_hora_extra.click()
+                                            WebDriverWait(self.driver, 5).until(
+                                                EC.visibility_of_element_located((By.XPATH, f"//tr[.//*[normalize-space(text())='{self.data_registro}']]//*[contains(@style,'color: red')]"))
+                                            )
+
+                                            WebDriverWait(self.driver, 5).until(
+                                                EC.element_to_be_clickable((By.XPATH, "//*[@id='hora_extra_button']"))
+                                            ).click()
+
+                                            SeleniumUtils.iframe_acess(self.driver, "/html/body/div[3]/div/div[1]/div/div/div[2]/div/iframe")
+
+                                            xpath_select = f"(//div[@class='body'])[1]//table//tr[td[normalize-space()='{self.data_registro}']]//select"
+                                            select_hora_extra = WebDriverWait(self.driver, 10).until(
+                                                EC.visibility_of_element_located((By.XPATH, xpath_select))
+                                            )
+
+                                            try:
+                                                select_hora_extra.click()
+                                            except Exception:
+                                                select_hora_extra.click()
+
+                                            elemento_ineficiencia = WebDriverWait(self.driver, 10).until(
+                                                EC.element_to_be_clickable((
+                                                    By.XPATH,
+                                                    f"""
+                                                    (//div[@class='body'])[1]
+                                                    //table
+                                                    //tr[td[normalize-space()='{self.data_registro}']]
+                                                    //select
+                                                    /option[normalize-space()='Ineficiência']
+                                                    """
+                                                ))
+                                            )
+                                            elemento_ineficiencia.click()
+
+                                            input_cr = WebDriverWait(self.driver, 10).until(
+                                                EC.visibility_of_element_located((
+                                                    By.XPATH,
+                                                    f"""
+                                                    //td[normalize-space()='{self.data_registro}']
+                                                    /ancestor::tr
+                                                    /following-sibling::tr
+                                                    //td[contains(normalize-space(),'CR')]
+                                                    /following-sibling::td//input[@type='text']
+                                                    """
+                                                ))
+                                            )
+                                            input_cr.send_keys("54648")
+                                            elemento_ineficiencia.click()
+                                            time.sleep(7)
+                                            WebDriverWait(self.driver, 10).until(
+                                                EC.visibility_of_element_located((By.XPATH, "//*[@value='Salvar']"))
+                                            ).click()
+                                            time.sleep(1)
+                                            notify = WebDriverWait(self.driver, 50).until(
+                                                EC.presence_of_element_located((By.XPATH, '//*[@id="top_pad_div"]/div/div/div[1]/span'))
+                                            )
+                                            notify = notify.get_attribute("innerText")
+                                            if notify == "Registros salvos com sucesso":
+                                                updates.append({"column": "Motivo Recusa", "value": f"{horario_escrever} - {data_escrever} - HE classificada"})
+
                                         except Exception:
-                                            select_hora_extra.click()
-
-                                        elemento_ineficiencia = WebDriverWait(self.driver, 10).until(
-                                            EC.element_to_be_clickable((
-                                                By.XPATH,
-                                                f"""
-                                                (//div[@class='body'])[1]
-                                                //table
-                                                //tr[td[normalize-space()='{self.data_registro}']]
-                                                //select
-                                                /option[normalize-space()='Ineficiência']
-                                                """
-                                            ))
-                                        )
-                                        elemento_ineficiencia.click()
-
-                                        input_cr = WebDriverWait(self.driver, 10).until(
-                                            EC.visibility_of_element_located((
-                                                By.XPATH,
-                                                f"""
-                                                //td[normalize-space()='{self.data_registro}']
-                                                /ancestor::tr
-                                                /following-sibling::tr
-                                                //td[contains(normalize-space(),'CR')]
-                                                /following-sibling::td//input[@type='text']
-                                                """
-                                            ))
-                                        )
-                                        input_cr.send_keys("54648")
-                                        elemento_ineficiencia.click()
-                                        time.sleep(7)
-                                        WebDriverWait(self.driver, 10).until(
-                                            EC.visibility_of_element_located((By.XPATH, "//*[@value='Salvar']"))
-                                        ).click()
-                                        time.sleep(1)
-                                        notify = WebDriverWait(self.driver, 50).until(
-                                            EC.presence_of_element_located((By.XPATH, '//*[@id="top_pad_div"]/div/div/div[1]/span'))
-                                        )
-                                        notify = notify.get_attribute("innerText")
-                                        if notify == "Registros salvos com sucesso":
-                                            updates.append({"column": "Motivo Recusa", "value": f"{horario_escrever} - {data_escrever} - HE classificada"})
-
-                                    except Exception:
-                                        updates.append({"column": "Motivo Recusa", "value": f"{horario_escrever} - {data_escrever}"})
+                                            updates.append({"column": "Motivo Recusa", "value": f"{horario_escrever} - {data_escrever}"})
 
                                 case "A diferença entre é menor do que duas horas.":
                                     updates.append({"column": "Motivo Recusa", "value": "Horário muito próximo ao registro original."})

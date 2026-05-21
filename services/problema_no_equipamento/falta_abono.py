@@ -32,7 +32,8 @@ class FaltaAbono:
         "Suspensão": "Suspensão",
         "Integração Cliente": "Integração Cliente",
         "Reciclagem": "Treinamento / Reciclagem",
-        "Liberado pelo Cliente": "Hora Justificada Empresa"
+        "Liberado pelo Cliente": "Hora Justificada Empresa",
+        "Capacitação Teórica": "Capacitação Teórica"
     }
 
     def adjust(self):
@@ -191,6 +192,12 @@ class FaltaAbono:
                         updates.append({"column": "Status", "value": "Não Tratado"})
                         updates.append({"column": "Motivo Recusa", "value": "Batida realizada em integração"})
                         return updates
+                    
+                    if classificacao_fata == "Capacitação Teórica" and total_batidas > 0:
+                        updates.append({"column": "Status", "value": "Não Tratado"})
+                        updates.append({"column": "Motivo Recusa", "value": "Batida realizada em dia de curso"})
+                        return updates
+                    
                     if classificacao_fata in ["Suspensão", "Falta", "Atrasos", "Abandono"]:
                         try:
                             WebDriverWait(self.driver, 10).until(

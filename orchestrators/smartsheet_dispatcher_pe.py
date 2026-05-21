@@ -111,8 +111,8 @@ class SmartsheetDispatcher:
                                 )
                                 updates = service.adjust()
 
-                            case "abandono" | "atraso" | "falta" | "suspensão" | "integração cliente" | "reciclagem" | "liberado pelo cliente":
-                                if motivo_alteracao_normalizado == '04.1 - faltas sem justificativa' or motivo_alteracao_normalizado == '04.3 - atrasos sem justificativa': 
+                            case "abandono" | "atraso" | "falta" | "suspensão" | "integração cliente" | "reciclagem" | "liberado pelo cliente" | "capacitação teórica":
+                                if motivo_alteracao_normalizado == '04.1 - faltas sem justificativa' or motivo_alteracao_normalizado == '04.3 - atrasos sem justificativa' or motivo_alteracao_normalizado == 'aprendiz - dia de curso': 
                                     service = FaltaAbono(
                                         driver=driver,
                                         row_id=row_id,
@@ -141,6 +141,7 @@ class SmartsheetDispatcher:
 
                                     )
                                     updates = service.adjust()
+                            
 
                         if updates:
                             all_updates.append({

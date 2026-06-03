@@ -4,6 +4,8 @@ import dotenv
 class Settings():
     dotenv.load_dotenv()
 
+    BASE_DIR: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
     SHEET_ID_PROBLEMA_NO_EQUIPAMENTO: str = os.getenv('SHEET_ID_PROBLEMA_NO_EQUIPAMENTO')
 
     SHEET_ID_APONTAMENTO_IMPAR: str = os.getenv('SHEET_ID_APONTAMENTO_IMPAR')
@@ -25,6 +27,14 @@ class Settings():
     USER_NAME_API_SITE_MAPPING: str = os.getenv('USER_NAME_API_SITE_MAPPING')
 
     PASSWORD_API_SITE_MAPPING: str = os.getenv('PASSWORD_API_SITE_MAPPING')
+
+    URL_PORTAL_GPSSA: str = os.getenv('URL_PORTAL_GPSSA')
+
+    URL_ADMISSOES_ATIVAS: str = os.getenv('URL_ADMISSOES_ATIVAS')
+
+    USER_PORTAL_GPSSA: str = os.getenv('USER_PORTAL_GPSSA')
+
+    PASSWORD_PORTAL_GPSSA: str = os.getenv('PASSWORD_PORTAL_GPSSA')
     
 
 settings = Settings()

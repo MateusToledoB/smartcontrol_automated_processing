@@ -46,6 +46,14 @@ class DriverFactory:
 
         return driver
 
+    @staticmethod
+    def set_download_dir(driver, download_path: str):
+        os.makedirs(download_path, exist_ok=True)
+        driver.execute_cdp_cmd(
+            "Browser.setDownloadBehavior",
+            {"behavior": "allow", "downloadPath": download_path},
+        )
+
     # @staticmethod
     # def create_edge_driver(worker_id=None):
     #     # Caminho para o msedgedriver.exe

@@ -308,3 +308,29 @@ class SeleniumUtils():
                 return motivo
 
         return None
+    
+    @staticmethod
+    def login_portal_gpssa(driver) -> None:
+        driver.get(settings.URL_PORTAL_GPSSA)
+
+        campo_user = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "txtUsername-inputEl"))
+        )
+        campo_user.send_keys(settings.USER_PORTAL_GPSSA)
+
+        campo_senha = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "txtPassword-inputEl"))
+        )
+        campo_senha.send_keys(settings.PASSWORD_PORTAL_GPSSA)
+
+        botao_login = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//*[text()='Entrar']"))
+        )
+        botao_login.click()  # aqui mantive o click simples (login)
+
+        # Pop-up "Ciente"
+        try:
+            elemento_ciente = driver.find_element(By.XPATH, "//*[@id='cienteClick-btnInnerEl']")
+            elemento_ciente.click()
+        except:
+            pass

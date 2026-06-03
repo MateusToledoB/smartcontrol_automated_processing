@@ -26,20 +26,20 @@ class FaltaAbono:
         self.observacao = observacao
 
     dict_classificacao_fata = {
-        "Abandono": "Abandono",
-        "Atraso": "Atrasos",
-        "Falta": "Falta",
-        "Suspensão": "Suspensão",
-        "Integração Cliente": "Integração Cliente",
-        "Reciclagem": "Treinamento / Reciclagem",
-        "Liberado pelo Cliente": "Hora Justificada Empresa",
-        "Capacitação Teórica": "Capacitação Teórica"
+        "abandono": "Abandono",
+        "atraso": "Atrasos",
+        "falta": "Falta",
+        "suspensão": "Suspensão",
+        "integração cliente": "Integração Cliente",
+        "reciclagem": "Treinamento / Reciclagem",
+        "liberado pelo cliente": "Hora Justificada Empresa",
+        "capacitação teórica": "Capacitação Teórica"
     }
 
     def adjust(self):
         updates = []
         try:
-            classificacao_fata = FaltaAbono.dict_classificacao_fata[self.classificacao_falta_lancado]
+            classificacao_fata = FaltaAbono.dict_classificacao_fata[self.classificacao_falta_lancado.strip().lower()]
             self.driver.switch_to.default_content()
             WebDriverWait(self.driver, 10).until(
                 EC.element_to_be_clickable((By.XPATH, '//*[@id="scroll_table_1"]/tbody/tr[3]/td[1]/a/img'))

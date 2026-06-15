@@ -1,4 +1,5 @@
 import datetime as dt
+import random
 
 class TimeUtils:
     @staticmethod
@@ -57,6 +58,17 @@ class TimeUtils:
         else:
             return "Diurno"
         
+
+    @staticmethod
+    def randomiza_horario(data_str: str, hora_str: str, delta_minutos: int = 5) -> tuple[str, str]:
+        data_formato = "%d/%m/%Y"
+        hora_formato = "%H:%M:%S" if len(hora_str) > 5 else "%H:%M"
+
+        momento = dt.datetime.strptime(f"{data_str} {hora_str}", f"{data_formato} {hora_formato}")
+        delta_segundos = random.randint(-delta_minutos * 60, delta_minutos * 60)
+        momento += dt.timedelta(seconds=delta_segundos)
+
+        return momento.strftime(data_formato), momento.strftime(hora_formato)
 
     @staticmethod
     def calcula_diferenca_entrada_saida(data_marcacao_dt, hora_batidada_pelo_colaborador_time, data_registro, entrada_horario_contratual_time, saida_horario_contratual_time, turno):

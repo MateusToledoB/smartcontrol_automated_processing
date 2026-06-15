@@ -12,6 +12,8 @@ class Settings():
 
     SHEET_ID_TEMPORARIOS: str = os.getenv('SHEET_ID_TEMPORARIOS')
 
+    SHEET_ID_CLASSIFICACAO_HE: str = os.getenv('SHEET_ID_CLASSIFICACAO_HE')
+
     SHEET_ID_EXCECOES_VALIDAS: str = os.getenv('SHEET_ID_EXCECOES_VALIDAS')
 
     USER_MOTUS: str = os.getenv('USER_MOTUS')

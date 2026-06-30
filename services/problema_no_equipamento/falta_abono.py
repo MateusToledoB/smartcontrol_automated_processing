@@ -227,10 +227,13 @@ class FaltaAbono:
                     ).click()
                     time.sleep(3)
 
-                    if lancar_observacao_falta:    
-                        response_records_observation = TreatmentRules.records_observation(self.driver, self.observacao, self.data_registro, updates)
-                        if response_records_observation:
-                            return response_records_observation
+                    if lancar_observacao_falta: 
+                        try:   
+                            response_records_observation = TreatmentRules.records_observation(self.driver, self.observacao, self.data_registro, updates)
+                            if response_records_observation:
+                                return response_records_observation
+                        except:
+                            pass
                         
                     updates.append({"column": "Status", "value": "Tratado"})
                     return updates
@@ -246,6 +249,8 @@ class FaltaAbono:
                     return updates
                 
         except Exception as e:
+                print(f'errroooooou: {e}')
+                time.sleep(300)
                 elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
                 updates.append({"column": "Status", "value": "Não Tratado"})
                 updates.append({"column": "Motivo Recusa", "value": "Ponto fechado."})

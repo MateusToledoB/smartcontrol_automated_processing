@@ -1,6 +1,5 @@
 import os
 import shutil
-import threading
 
 from selenium import webdriver
 from selenium.webdriver.edge.options import Options
@@ -9,22 +8,6 @@ from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from webdriver_manager.core.driver_cache import DriverCacheManager
 
 class DriverFactory:
-    _driver_path = None
-    _driver_path_lock = threading.Lock()
-
-    @classmethod
-    def _resolve_driver_path(cls):
-        # Resolve o msedgedriver uma unica vez por processo e reaproveita o
-        # cache local do webdriver_manager, evitando que cada um dos varios
-        # bots concorrentes refaca a resolucao/versionamento do driver.
-        if cls._driver_path is None:
-            with cls._driver_path_lock:
-                if cls._driver_path is None:
-                    cls._driver_path = EdgeChromiumDriverManager(
-                        cache_manager=DriverCacheManager()
-                    ).install()
-        return cls._driver_path
-
     @staticmethod
     def create_edge_driver(worker_id=None):
         options = Options()
@@ -78,8 +61,7 @@ class DriverFactory:
 
         options.add_argument("--window-size=1920,1080")
 
-        service = Service(executable_path=DriverFactory._resolve_driver_path())
-        driver = webdriver.Edge(service=service, options=options)
+        driver = webdriver.Edge(options=options)
 
         return driver
 

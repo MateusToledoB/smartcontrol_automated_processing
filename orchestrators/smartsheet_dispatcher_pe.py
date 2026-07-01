@@ -40,7 +40,7 @@ class SmartsheetDispatcher:
 
         bloco_linhas = sheet.rows[start:end]
 
-        driver = DriverFactory.create_edge_driver()
+        driver = DriverFactory.create_edge_driver(worker_id=worker_id)
         batch_size = 50
         execution_start_time = datetime.now()
         send_execution_mapping("problema_no_equipamento", "Problema no equipamento", 0, execution_start_time, running=True)
@@ -173,4 +173,5 @@ class SmartsheetDispatcher:
 
 if __name__ == "__main__":
     import sys
-    SmartsheetDispatcher.main(int(sys.argv[1]))
+    total_workers = int(sys.argv[2]) if len(sys.argv) > 2 else 1
+    SmartsheetDispatcher.main(int(sys.argv[1]), total_workers)

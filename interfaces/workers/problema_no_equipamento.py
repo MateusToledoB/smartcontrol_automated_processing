@@ -6,7 +6,7 @@ from datetime import datetime
 from threading import Event
 
 INTERVAL_SECONDS = 5 * 60
-TOTAL_WORKERS = 1
+TOTAL_WORKERS = 6
 STOP_EVENT = Event()
 
 
@@ -16,6 +16,7 @@ def run_bot(worker_id: int):
         "-m",
         "orchestrators.smartsheet_dispatcher_pe",
         str(worker_id),
+        str(TOTAL_WORKERS),
     ]
     return subprocess.Popen(cmd)
 

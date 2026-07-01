@@ -15,20 +15,22 @@ from core.settings import settings
 class ExtractDataBase:
     @staticmethod
     def admissoes_ativas():
-        driver = DriverFactory.create_edge_driver()
+        driver = DriverFactory.create_browser_driver()
+        try:
+            SeleniumUtils.login_portal_gpssa(driver)
 
-        SeleniumUtils.login_portal_gpssa(driver)
+            time.sleep(5)
 
-        time.sleep(5)
+            driver.get(settings.URL_ADMISSOES_ATIVAS)
 
-        driver.get(settings.URL_ADMISSOES_ATIVAS)
+            time.sleep(10)
 
-        time.sleep(10)
+            DriverFactory.set_download_dir(driver, os.path.join(settings.BASE_DIR, "data_storage"))
 
-        DriverFactory.set_download_dir(driver, os.path.join(settings.BASE_DIR, "data_storage"))
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "//*[text()='Exportar']"))
+            ).click()
 
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, "//*[text()='Exportar']"))
-        ).click()
-
-        time.sleep(10)   
+            time.sleep(10)
+        finally:
+            driver.quit()

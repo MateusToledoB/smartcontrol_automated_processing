@@ -36,7 +36,7 @@ class SmartsheetDispatcher:
 
         bloco_linhas = sheet.rows[start:end]
 
-        driver = DriverFactory.create_edge_driver()
+        driver = DriverFactory.create_browser_driver()
         batch_size = 50
         execution_start_time = datetime.now()
         send_execution_mapping("apontamento_impar", "Apontamento impar", 0, execution_start_time, running=True, starting=True)

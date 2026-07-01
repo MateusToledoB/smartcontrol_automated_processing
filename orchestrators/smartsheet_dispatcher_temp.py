@@ -45,10 +45,11 @@ class SmartsheetDispatcher:
         send_execution_mapping("temporarios", "Temporarios", 0, execution_start_time, running=True)
         all_updates = []
         batch_start_time = datetime.now()
-        driver = DriverFactory.create_edge_driver()
+        driver = DriverFactory.create_browser_driver()
 
-        SeleniumUtils.login_motus(driver, settings.USER_MOTUS, settings.PASSWORD_MOTUS)
         try:
+            SeleniumUtils.login_motus(driver, settings.USER_MOTUS, settings.PASSWORD_MOTUS)
+
             for linha in bloco_linhas:
                 updates = []
                 if stop_requested:

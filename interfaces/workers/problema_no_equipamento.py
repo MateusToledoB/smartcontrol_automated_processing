@@ -6,7 +6,7 @@ from datetime import datetime
 from threading import Event
 
 INTERVAL_SECONDS = 5 * 60
-TOTAL_WORKERS = 6
+TOTAL_WORKERS = 1
 STOP_EVENT = Event()
 
 

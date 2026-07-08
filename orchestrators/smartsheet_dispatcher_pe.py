@@ -79,6 +79,7 @@ class SmartsheetDispatcher:
                 cr_number         = cr_number = str(cr[:5]).zfill(5)
                 observacao        = dados_celulas.get('Observação', None)
                 observacao        = "Sem justificativa" if observacao is None else observacao
+                gerente_regional   = dados_celulas.get('Gerente_Regional', None)
                 row_id            = linha.id
                 linha_numero      = linha.row_number
 
@@ -122,7 +123,8 @@ class SmartsheetDispatcher:
                                         classificacao_falta_lancado=classificacao,
                                         cr_number=cr_number,
                                         df_cr=df_cr,
-                                        observacao=observacao
+                                        observacao=observacao,
+                                        gerente_regional=gerente_regional
 
                                     )
                                     updates = service.adjust()

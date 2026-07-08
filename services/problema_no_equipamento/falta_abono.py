@@ -14,7 +14,7 @@ from services.treatment_rules import TreatmentRules
 from utils.selenium_utils import SeleniumUtils
 
 class FaltaAbono:
-    def __init__(self, driver, row_id, sheet_id, token, data_registro, classificacao_falta_lancado, cr_number, df_cr, observacao):
+    def __init__(self, driver, row_id, sheet_id, token, data_registro, classificacao_falta_lancado, cr_number, df_cr, observacao, gerente_regional):
         self.driver = driver
         self.row_id = row_id
         self.sheet_id = sheet_id
@@ -24,6 +24,7 @@ class FaltaAbono:
         self.cr_number = cr_number
         self.df_cr = df_cr
         self.observacao = observacao
+        self.gerente_regional = gerente_regional
 
     dict_classificacao_fata = {
         "abandono": "Abandono",
@@ -170,13 +171,15 @@ class FaltaAbono:
                     ).click()
 
                     time.sleep(3)
-                  
-                    lancamento_intervalo = TreatmentRules.check_interval_launch(self.driver, self.data_registro)
 
-                    if lancamento_intervalo == False:
-                        updates.append({"column": "Status", "value": "Não Tratado"})
-                        updates.append({"column": "Motivo Recusa", "value": "Erro ao lançar intervalo para ch > 6h"})
-                        return updates
+                    if self.gerente_regional.strip().upper() in ["TIAGO MUNHOZ ANDRADE", "JEFFERSON GUSTAVO DA SILVA", "WILLIAN ROBERTO DE OLIVEIRA"]:
+
+                        lancamento_intervalo = TreatmentRules.check_interval_launch(self.driver, self.data_registro)
+
+                        if lancamento_intervalo == False:
+                            updates.append({"column": "Status", "value": "Não Tratado"})
+                            updates.append({"column": "Motivo Recusa", "value": "Erro ao lançar intervalo para ch > 6h"})
+                            return updates
                     
                     updates.append({"column": "Status", "value": "Tratado"})
 

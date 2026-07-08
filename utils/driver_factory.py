@@ -5,18 +5,30 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 
+def _show_browser():
+    valor = os.getenv("SHOW_BROWSER", "")
+    return valor.strip().lower() in {"1", "true", "t", "yes", "y", "on"}
+
+
 class DriverFactory:
     @staticmethod
     def create_browser_driver():
         options = Options()
         options.page_load_strategy = "eager"
 
-        options.binary_location = (
-            os.getenv("CHROME_HEADLESS_SHELL_PATH")
-            or shutil.which("chrome-headless-shell")
-            or shutil.which("chromium")
-            or shutil.which("google-chrome")
-        )
+        if _show_browser():
+            options.binary_location = (
+                os.getenv("CHROME_BROWSER_PATH")
+                or shutil.which("chrome")
+                or shutil.which("google-chrome")
+            )
+        else:
+            options.binary_location = (
+                os.getenv("CHROME_HEADLESS_SHELL_PATH")
+                or shutil.which("chrome-headless-shell")
+                or shutil.which("chromium")
+                or shutil.which("google-chrome")
+            )
 
         # Mantem o consumo de GPU baixo mesmo com varios drivers abertos em paralelo
         options.add_argument("--disable-gpu")
@@ -57,7 +69,10 @@ class DriverFactory:
         # open pages"), confirmado em teste local com chromedriver 150.
         options.add_argument("--window-size=1920,1080")
 
-        chromedriver_path = os.getenv("CHROMEDRIVER_PATH") or shutil.which("chromedriver")
+        if _show_browser():
+            chromedriver_path = os.getenv("CHROMEDRIVER_BROWSER_PATH") or shutil.which("chromedriver")
+        else:
+            chromedriver_path = os.getenv("CHROMEDRIVER_PATH") or shutil.which("chromedriver")
         service = Service(executable_path=chromedriver_path) if chromedriver_path else Service()
         driver = webdriver.Chrome(service=service, options=options)
 

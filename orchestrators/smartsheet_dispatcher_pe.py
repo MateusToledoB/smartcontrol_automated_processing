@@ -9,10 +9,36 @@ from services.problema_no_equipamento.horario_contratual_previsto import Horario
 from services.problema_no_equipamento.informar_horario_realizado import InformarHorarioRealizado
 from services.problema_no_equipamento.falta_abono import FaltaAbono
 from services.problema_no_equipamento.falta_com_desconto_bh import FaltaDescontoBH
-
 from utils.driver_factory import DriverFactory
 
+
 class SmartsheetDispatcher:
+
+    CLASSIFICACAO_FALTA_CORRECOES = {
+        "Integra����o Cliente": "Integração Cliente",
+        "Suspens��o": "Suspensão",
+        "Hor��rio contratual Previsto (Problema no Equipamento)": "Horário contratual Previsto (Problema no Equipamento)",
+        "Problema no equipamento - Informar hor��rio realizado": "Problema no equipamento - Informar horário realizado",
+    }
+
+    @staticmethod
+    def corrigir_classificacao_falta(valor):
+        if valor is None:
+            return None
+
+        # Remove espaços duplicados/triplos
+        valor = " ".join(str(valor).split())
+
+        corrigido = SmartsheetDispatcher.CLASSIFICACAO_FALTA_CORRECOES.get(valor, valor)
+
+        if corrigido != valor:
+            print(
+                f"[dispatcher_pe] Classificação corrigida: "
+                f"{valor!r} -> {corrigido!r}"
+            )
+
+        return corrigido
+
     @staticmethod
     def main(worker_id: int, total_workers: int = 1):
         stop_requested = False
@@ -24,156 +50,249 @@ class SmartsheetDispatcher:
 
         signal.signal(signal.SIGTERM, _handle_shutdown)
         signal.signal(signal.SIGINT, _handle_shutdown)
-        sheet, _, token, sheet_id, _ = SmartsheetClient.setup_smartsheet(settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO)
-        nome_coluna_para_indice = {coluna.title: index for index, coluna in enumerate(sheet.columns)}
+
+        sheet, _, token, sheet_id, _ = SmartsheetClient.setup_smartsheet(
+            settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO
+        )
+
+        nome_coluna_para_indice = {
+            coluna.title: index
+            for index, coluna in enumerate(sheet.columns)
+        }
 
         df_cr = SmartsheetClient.return_df_crs()
 
         if worker_id < 1 or worker_id > total_workers:
             raise ValueError(f"worker_id deve estar entre 1 e {total_workers}")
 
-        total         = len(sheet.rows)
-        base, resto   = divmod(total, total_workers)
+        total = len(sheet.rows)
+        base, resto = divmod(total, total_workers)
         indice_worker = worker_id - 1
-        start         = indice_worker * base + min(indice_worker, resto)
-        end           = start + base + (1 if indice_worker < resto else 0)
+        start = indice_worker * base + min(indice_worker, resto)
+        end = start + base + (1 if indice_worker < resto else 0)
 
         bloco_linhas = sheet.rows[start:end]
 
         driver = DriverFactory.create_browser_driver()
         batch_size = 50
         execution_start_time = datetime.now()
-        send_execution_mapping("problema_no_equipamento", "Problema no equipamento", 0, execution_start_time, running=True)
+
+        send_execution_mapping(
+            "problema_no_equipamento",
+            "Problema no equipamento",
+            0,
+            execution_start_time,
+            running=True
+        )
+
         all_updates = []
         batch_start_time = datetime.now()
+
         try:
             for linha in bloco_linhas:
                 updates = []
-                if stop_requested:
-                    print("[dispatcher_pe] Interrupcao solicitada, finalizando loop para aplicar update_bulk.")
-                    break
-          
-                dados_celulas = {coluna.title: linha.cells[nome_coluna_para_indice[coluna.title]].value
-                                    for coluna in sheet.columns
-                                    if coluna.title in nome_coluna_para_indice}
 
-                data_registro_str = dados_celulas.get('Data_do_Registro', None)
+                if stop_requested:
+                    print(
+                        "[dispatcher_pe] Interrupcao solicitada, "
+                        "finalizando loop para aplicar update_bulk."
+                    )
+                    break
+
+                dados_celulas = {
+                    coluna.title: linha.cells[
+                        nome_coluna_para_indice[coluna.title]
+                    ].value
+                    for coluna in sheet.columns
+                    if coluna.title in nome_coluna_para_indice
+                }
+
+                data_registro_str = dados_celulas.get("Data_do_Registro", None)
                 data_registro_EUA = datetime.strptime(data_registro_str, "%Y-%m-%d")
-                data_registro     = data_registro_EUA.strftime("%d/%m/%Y")
-                link1_ponto       = dados_celulas.get('Link1', None)
-                status            = dados_celulas.get('Status', None)
-                motivo_recusa     = dados_celulas.get('Motivo Recusa', None)
-                colaborador       = dados_celulas.get('Colaborador', None)
-                entrada           = dados_celulas.get('Marcação/Entrada', None)
-                saida             = dados_celulas.get('Horário de Saída', None)
-                intervalo         = dados_celulas.get('Tempo de Intervalo', None)
-                cpf               = colaborador.split("-")[0].strip() if colaborador and "-" in colaborador else None
-                cpf               = str(cpf).zfill(11) if cpf is not None else None
-                motivo_alteracao  = dados_celulas.get('Motivo Alteração', None)
+                data_registro = data_registro_EUA.strftime("%d/%m/%Y")
+
+                link1_ponto = dados_celulas.get("Link1", None)
+                status = dados_celulas.get("Status", None)
+                motivo_recusa = dados_celulas.get("Motivo Recusa", None)
+                colaborador = dados_celulas.get("Colaborador", None)
+                entrada = dados_celulas.get("Marcação/Entrada", None)
+                saida = dados_celulas.get("Horário de Saída", None)
+                intervalo = dados_celulas.get("Tempo de Intervalo", None)
+
+                cpf = colaborador.split("-")[0].strip() if colaborador and "-" in colaborador else None
+                cpf = str(cpf).zfill(11) if cpf is not None else None
+
+                motivo_alteracao = dados_celulas.get("Motivo Alteração", None)
                 motivo_alteracao_normalizado = str(motivo_alteracao).strip().lower()
-                if intervalo != None:
+
+                if intervalo is not None:
                     horas, minutos = map(int, intervalo.split(":"))
                     intervalo = timedelta(hours=horas, minutes=minutos)
-                classificacao     = dados_celulas.get('Classificação da Falta', None)
-                cr                = dados_celulas.get('CR', None)
-                cr_number         = cr_number = str(cr[:5]).zfill(5)
-                observacao        = dados_celulas.get('Observação', None)
-                observacao        = "Sem justificativa" if observacao is None else observacao
-                gerente_regional   = dados_celulas.get('Gerente_Regional', None)
-                row_id            = linha.id
-                linha_numero      = linha.row_number
 
-                if status == None:
-                        print(f"linha {linha_numero} - Colaborador: {colaborador} - Data: {data_registro} Classificação: {classificacao}")
+                # CORREÇÃO NOVA
+                classificacao = dados_celulas.get("Classificação da Falta", None)
+                classificacao = SmartsheetDispatcher.corrigir_classificacao_falta(
+                    classificacao
+                )
 
-                        driver.get(link1_ponto)
-                        match str(classificacao).strip().lower():
-                            
-                            case "horário contratual previsto (problema no equipamento)":
-                                service = HorarioContratualPrevisto(
+                cr = dados_celulas.get("CR", None)
+                cr_number = str(cr[:5]).zfill(5)
+
+                observacao = dados_celulas.get("Observação", None)
+                observacao = "Sem justificativa" if observacao is None else observacao
+
+                gerente_regional = dados_celulas.get("Gerente_Regional", None)
+                row_id = linha.id
+                linha_numero = linha.row_number
+
+                if status is None:
+                    print(
+                        f"linha {linha_numero} - "
+                        f"Colaborador: {colaborador} - "
+                        f"Data: {data_registro} "
+                        f"Classificação: {classificacao}"
+                    )
+
+                    driver.get(link1_ponto)
+
+                    match str(classificacao).strip().lower():
+
+                        case "horário contratual previsto (problema no equipamento)":
+                            service = HorarioContratualPrevisto(
+                                driver=driver,
+                                row_id=row_id,
+                                sheet_id=sheet_id,
+                                token=token,
+                                data_registro=data_registro,
+                            )
+                            updates = service.adjust()
+
+                        case "problema no equipamento - informar horário realizado":
+                            service = InformarHorarioRealizado(
+                                driver=driver,
+                                row_id=row_id,
+                                sheet_id=sheet_id,
+                                token=token,
+                                data_registro=data_registro,
+                                entrada=entrada,
+                                saida=saida,
+                                intervalo=intervalo,
+                            )
+                            updates = service.adjust()
+
+                        case (
+                            "abandono"
+                            | "atraso"
+                            | "falta"
+                            | "suspensão"
+                            | "integração cliente"
+                            | "reciclagem"
+                            | "liberado pelo cliente"
+                            | "capacitação teórica"
+                        ):
+                            if (
+                                motivo_alteracao_normalizado == "04.1 - faltas sem justificativa"
+                                or motivo_alteracao_normalizado == "04.3 - atrasos sem justificativa"
+                                or motivo_alteracao_normalizado == "aprendiz - dia de curso"
+                            ):
+                                service = FaltaAbono(
                                     driver=driver,
                                     row_id=row_id,
                                     sheet_id=sheet_id,
                                     token=token,
                                     data_registro=data_registro,
+                                    classificacao_falta_lancado=classificacao,
+                                    cr_number=cr_number,
+                                    df_cr=df_cr,
+                                    observacao=observacao,
+                                    gerente_regional=gerente_regional
                                 )
                                 updates = service.adjust()
 
-                            case "problema no equipamento - informar horário realizado":
-                                service = InformarHorarioRealizado(
+                            elif motivo_alteracao_normalizado == "09.1 - b.h. negativo":
+                                service = FaltaDescontoBH(
                                     driver=driver,
                                     row_id=row_id,
                                     sheet_id=sheet_id,
                                     token=token,
                                     data_registro=data_registro,
-                                    entrada=entrada,
-                                    saida=saida,
-                                    intervalo=intervalo,
+                                    classificacao_falta_lancado=classificacao,
+                                    cr_number=cr_number,
+                                    df_cr=df_cr,
+                                    observacao=observacao
                                 )
                                 updates = service.adjust()
 
-                            case "abandono" | "atraso" | "falta" | "suspensão" | "integração cliente" | "reciclagem" | "liberado pelo cliente" | "capacitação teórica":
-                                if motivo_alteracao_normalizado == '04.1 - faltas sem justificativa' or motivo_alteracao_normalizado == '04.3 - atrasos sem justificativa' or motivo_alteracao_normalizado == 'aprendiz - dia de curso': 
-                                    service = FaltaAbono(
-                                        driver=driver,
-                                        row_id=row_id,
-                                        sheet_id=sheet_id,
-                                        token=token,
-                                        data_registro=data_registro,
-                                        classificacao_falta_lancado=classificacao,
-                                        cr_number=cr_number,
-                                        df_cr=df_cr,
-                                        observacao=observacao,
-                                        gerente_regional=gerente_regional
+                    if updates:
+                        all_updates.append({
+                            "row_id": row_id,
+                            "updates": updates
+                        })
 
-                                    )
-                                    updates = service.adjust()
-                                
-                                elif motivo_alteracao_normalizado == '09.1 - b.h. negativo':
-                                    service = FaltaDescontoBH(
-                                        driver=driver,
-                                        row_id=row_id,
-                                        sheet_id=sheet_id,
-                                        token=token,
-                                        data_registro=data_registro,
-                                        classificacao_falta_lancado=classificacao,
-                                        cr_number=cr_number,
-                                        df_cr=df_cr,
-                                        observacao=observacao
+                        if len(all_updates) >= batch_size:
+                            batch_count = len(all_updates)
 
-                                    )
-                                    updates = service.adjust()
-                            
+                            try:
+                                SmartsheetClient.update_bulk(
+                                    all_updates,
+                                    settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO
+                                )
+                            finally:
+                                send_execution_mapping(
+                                    "problema_no_equipamento",
+                                    "Problema no equipamento",
+                                    batch_count,
+                                    batch_start_time,
+                                    running=True
+                                )
 
-                        if updates:
-                            all_updates.append({
-                                "row_id": row_id,
-                                "updates": updates
-                            })
-                            if len(all_updates) >= batch_size:
-                                batch_count = len(all_updates)
-                                try:
-                                    SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO)
-                                finally:
-                                    send_execution_mapping("problema_no_equipamento", "Problema no equipamento", batch_count, batch_start_time, running=True)
-                                    all_updates.clear()
-                                    batch_start_time = datetime.now()
-                                
+                                all_updates.clear()
+                                batch_start_time = datetime.now()
+
         except Exception as e:
-            print(f'erro: {e}')
+            print(f"erro: {e}")
+
         finally:
             driver.quit()
+
             if all_updates:
                 final_count = len(all_updates)
+
                 try:
-                    SmartsheetClient.update_bulk(all_updates, settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO)
+                    SmartsheetClient.update_bulk(
+                        all_updates,
+                        settings.SHEET_ID_PROBLEMA_NO_EQUIPAMENTO
+                    )
                 finally:
-                    send_execution_mapping("problema_no_equipamento", "Problema no equipamento", final_count, batch_start_time, running=False)
+                    send_execution_mapping(
+                        "problema_no_equipamento",
+                        "Problema no equipamento",
+                        final_count,
+                        batch_start_time,
+                        running=False
+                    )
+
             else:
-                print("[dispatcher_pe] Nenhum update pendente; enviando status para API com 0 linhas.")
-                send_execution_mapping("problema_no_equipamento", "Problema no equipamento", 0, execution_start_time, running=False)
+                print(
+                    "[dispatcher_pe] Nenhum update pendente; "
+                    "enviando status para API com 0 linhas."
+                )
+
+                send_execution_mapping(
+                    "problema_no_equipamento",
+                    "Problema no equipamento",
+                    0,
+                    execution_start_time,
+                    running=False
+                )
+
 
 if __name__ == "__main__":
     import sys
+
     total_workers = int(sys.argv[2]) if len(sys.argv) > 2 else 1
-    SmartsheetDispatcher.main(int(sys.argv[1]), total_workers)
+
+    SmartsheetDispatcher.main(
+        int(sys.argv[1]),
+        total_workers
+    )

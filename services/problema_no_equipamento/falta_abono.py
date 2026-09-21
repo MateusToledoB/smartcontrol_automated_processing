@@ -172,7 +172,7 @@ class FaltaAbono:
 
                     time.sleep(3)
 
-                    if self.gerente_regional.strip().upper() in ["TIAGO MUNHOZ ANDRADE", "JEFFERSON GUSTAVO DA SILVA", "WILLIAN ROBERTO DE OLIVEIRA"]:
+                    if self.gerente_regional.strip().upper() in ["AYRTON BRUNO DA CRUZ RIBEIRO", "JEFFERSON GUSTAVO DA SILVA", "WILLIAN ROBERTO DE OLIVEIRA"]:
 
                         lancamento_intervalo = TreatmentRules.check_interval_launch(self.driver, self.data_registro)
 

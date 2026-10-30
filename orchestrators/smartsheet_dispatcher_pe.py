@@ -9,6 +9,7 @@ from services.problema_no_equipamento.horario_contratual_previsto import Horario
 from services.problema_no_equipamento.informar_horario_realizado import InformarHorarioRealizado
 from services.problema_no_equipamento.falta_abono import FaltaAbono
 from services.problema_no_equipamento.falta_com_desconto_bh import FaltaDescontoBH
+from services.problema_no_equipamento.falta_banco_horas_descontar_041 import FaltaBancoHorasDescontar041
 from utils.driver_factory import DriverFactory
 
 
@@ -179,6 +180,46 @@ class SmartsheetDispatcher:
                                 intervalo=intervalo,
                             )
                             updates = service.adjust()
+
+
+                        case "banco de horas - descontar":
+
+                            print(
+                                f"[dispatcher_pe] Banco de Horas - Descontar | "
+                                f"Motivo Alteração original: {motivo_alteracao!r} | "
+                                f"normalizado: {motivo_alteracao_normalizado!r}"
+                            )
+
+                            if motivo_alteracao_normalizado in (
+                                "04.1 - faltas sem justificativa",
+                                "04.3 - atrasos sem justificativa",
+                            ):
+
+                                print(
+                                    f"[dispatcher_pe] Iniciando tratamento BH "
+                                    f"para a linha {linha_numero} | "
+                                    f"Motivo: {motivo_alteracao}"
+                                )
+
+                                service = FaltaBancoHorasDescontar041(
+                                    driver=driver,
+                                    row_id=row_id,
+                                    sheet_id=sheet_id,
+                                    token=token,
+                                    data_registro=data_registro,
+                                )
+
+                                updates = service.adjust()
+
+                            else:
+
+                                print(
+                                    f"[dispatcher_pe] Linha {linha_numero} ignorada: "
+                                    f"Banco de Horas - Descontar com motivo não previsto. "
+                                    f"Valor recebido: {motivo_alteracao!r}"
+                                )
+
+
 
                         case (
                             "abandono"

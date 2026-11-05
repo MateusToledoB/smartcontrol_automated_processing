@@ -65,7 +65,6 @@ class TreatmentRules:
         driver.switch_to.default_content()
 
         linha_xpath = (
-            "//div[contains(@class,'body')]"
             "//table[@id='scroll_table_1']"
             "//tbody/tr["
             f"td[6][normalize-space()='{data_registro}']"
@@ -122,7 +121,6 @@ class TreatmentRules:
         driver.switch_to.default_content()
 
         linha_xpath = (
-            "//div[contains(@class,'body')]"
             "//table[@id='scroll_table_1']"
             "//tbody/tr["
             f"td[6][normalize-space()='{data_registro}']"

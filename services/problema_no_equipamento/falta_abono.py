@@ -253,7 +253,6 @@ class FaltaAbono:
                 
         except Exception as e:
                 print(f'errroooooou: {e}')
-                time.sleep(300)
                 elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
                 updates.append({"column": "Status", "value": "Não Tratado"})
                 updates.append({"column": "Motivo Recusa", "value": "Ponto fechado."})

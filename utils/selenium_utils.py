@@ -264,7 +264,15 @@ class SeleniumUtils():
             "Integração Cliente",
             "Hora Justificada Empresa",
             "Licença Óbito",
-            "Acompanhamento de Menores"
+            "Acompanhamento de Menores",
+            "Atestado",
+            "Calamidade",
+            "Certidão Eleitoral",
+            "Compensada com HE",
+            "Doação de Sangue",
+            "Eleição - Votação",
+            "Licença",
+            "Serviço Militar/Alistamento"
         ]
 
         for motivo in motivos:

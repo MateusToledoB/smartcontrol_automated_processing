@@ -71,10 +71,26 @@ class FaltaAbono:
             lancamento_registrado = SeleniumUtils.verifica_lancamento(self.driver)
             
             if lancamento_registrado:
-                if lancamento_registrado == classificacao_fata:
+                if lancamento_registrado == classificacao_fata or lancamento_registrado in [
+                                                    "Acompanhamento de Menores",
+                                                    "Atestado Médico",
+                                                    "Atestado Odontológico",
+                                                    "Licença Paternidade",
+                                                    "Licença Casamento",
+                                                    "Licença Óbito",
+                                                    "Atestado",
+                                                    "Calamidade",
+                                                    "Certidão Eleitoral",
+                                                    "Compensada com HE",
+                                                    "Doação de Sangue",
+                                                    "Eleição - Votação",
+                                                    "Licença",
+                                                    "Serviço Militar/Alistamento"
+                                                ]:
                     updates.append({"column": "Status", "value": "Tratado"})
                     updates.append({"column": "Motivo Recusa", "value": lancamento_registrado})
                 else:
+                    
                     updates.append({"column": "Status", "value": "Não Tratado"})
                     updates.append({"column": "Motivo Recusa", "value": "Lançamento Justificativa divergente"})
                 fim = time.time()

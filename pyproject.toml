@@ -1,0 +1,15 @@
+[project]
+name = "smartcontrol-automated-processing"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "openpyxl>=3.1.5",
+    "pandas>=3.0.2",
+    "python-dotenv>=1.2.2",
+    "requests>=2.33.1",
+    "selenium>=4.41.0",
+    "smartsheet-python-sdk>=3.7.2",
+    "xlrd>=2.0.2",
+]

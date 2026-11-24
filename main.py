@@ -1,0 +1,3 @@
+from services.extract_data_base.extract_data_base_service import ExtractDataBase
+
+ExtractDataBase.admissoes_ativas()

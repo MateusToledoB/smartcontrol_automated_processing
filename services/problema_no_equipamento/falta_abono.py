@@ -2,6 +2,7 @@ import datetime as dt
 from datetime import datetime, timedelta
 import re
 import time
+import traceback
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -36,6 +37,17 @@ class FaltaAbono:
         "liberado pelo cliente": "Hora Justificada Empresa",
         "capacitação teórica": "Capacitação Teórica"
     }
+
+    @staticmethod
+    def _ler_duracao_falta(texto):
+        """Lê duração HH:MM, inclusive com sinal e mais de 23 horas."""
+        texto = str(texto).strip().replace("\u2212", "-").replace("\u2013", "-")
+        partes = re.fullmatch(r"([+-]?)(\d+):([0-5]\d)", texto)
+        if not partes:
+            raise ValueError(f"Tempo de falta inválido: {texto!r}")
+        sinal, horas, minutos = partes.groups()
+        duracao = timedelta(hours=int(horas), minutes=int(minutos))
+        return -duracao if sinal == "-" else duracao
 
     def adjust(self):
         updates = []
@@ -115,10 +127,11 @@ class FaltaAbono:
                 updates.append({"column": "Motivo Recusa", "value": "Sem tempo de falta gerado"})
                 return updates
             
-            tempo_falta_obj = dt.datetime.strptime(texto_tempo_falta, "%H:%M").time()
-            tempo_limite = dt.time(3, 0)
+            tempo_falta_obj = self._ler_duracao_falta(texto_tempo_falta)
+            tempo_limite = timedelta(hours=3)
 
-            if tempo_falta_obj > tempo_limite:
+            # O sinal representa o saldo; a observação depende da duração da falta.
+            if abs(tempo_falta_obj) > tempo_limite:
                 lancar_observacao_falta = True
             else:
                 lancar_observacao_falta = False
@@ -268,12 +281,35 @@ class FaltaAbono:
                     return updates
                 
         except Exception as e:
-                print(f'errroooooou: {e}')
-                time.sleep(300)
-                elemento_ponto_fechado = self.driver.find_element(By.XPATH, "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']")
-                updates.append({"column": "Status", "value": "Não Tratado"})
-                updates.append({"column": "Motivo Recusa", "value": "Ponto fechado."})
-                return updates
+            print(f'[FaltaAbono] Erro original: {type(e).__name__}: {e}')
+            traceback.print_exc()
+            # Mantém a pausa de cinco minutos já existente nessa versão.
+            time.sleep(300)
+            xpath_fechado = "//span[@title='Fechado']//img[@src='/smartgps/images/bt_travar_d.png']"
+            ponto_fechado = False
+            try:
+                ponto_fechado = bool(self.driver.find_elements(By.XPATH, xpath_fechado))
+            except Exception:
+                pass
+            try:
+                self.driver.switch_to.default_content()
+                ponto_fechado = ponto_fechado or bool(
+                    self.driver.find_elements(By.XPATH, xpath_fechado)
+                )
+            except Exception:
+                pass
+            if ponto_fechado:
+                motivo = "Ponto fechado."
+            else:
+                detalhe = " ".join(str(e).split())[:180]
+                motivo = (
+                    f"Erro ao tratar falta: {type(e).__name__}: {detalhe}. "
+                    "Tratamento não confirmado; conferir o ponto antes de repetir."
+                )
+            updates = [u for u in updates if u.get("column") not in ("Status", "Motivo Recusa")]
+            updates.append({"column": "Status", "value": "Não Tratado"})
+            updates.append({"column": "Motivo Recusa", "value": motivo})
+            return updates
 
         return updates
 
